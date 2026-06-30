@@ -1,0 +1,6 @@
+{
+  "name": "Panda Flap",
+  "description": "An elegant flappy-arcade game where you guide a cute panda through bamboo forests, collect coins, and unlock cool skins.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
