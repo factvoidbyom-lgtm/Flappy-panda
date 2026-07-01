@@ -121,6 +121,120 @@ export default function Settings({
           </div>
         </div>
 
+        {/* Premium Gameplay & Preferences Settings Card */}
+        <div className="bg-white/85 backdrop-blur-md p-4.5 rounded-2xl border border-rose-100 shadow-md space-y-4">
+          <h3 className="text-[10px] font-bold tracking-[0.25em] text-rose-450 uppercase">Preferences</h3>
+
+          {/* Vibration */}
+          <div className="flex items-center justify-between border-b border-rose-50 pb-3">
+            <div>
+              <h4 className="text-xs font-black text-rose-950 uppercase tracking-wider">Haptic Feedback</h4>
+              <p className="text-[9px] text-rose-700 font-semibold uppercase tracking-wider">Vibrate on bumps & milestones</p>
+            </div>
+            <button
+              onClick={() => {
+                playClick();
+                onUpdateSettings({ ...settings, vibrationEnabled: !settings.vibrationEnabled });
+                if (navigator.vibrate) navigator.vibrate(50);
+              }}
+              className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${settings.vibrationEnabled ? 'bg-rose-500' : 'bg-rose-200'}`}
+            >
+              <div className={`bg-white w-4.5 h-4.5 rounded-full shadow-sm transform transition-transform ${settings.vibrationEnabled ? 'translate-x-4.5' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
+          {/* Graphics Quality */}
+          <div className="space-y-2 border-b border-rose-50 pb-3">
+            <div className="flex justify-between items-center">
+              <h4 className="text-xs font-black text-rose-950 uppercase tracking-wider">Graphics Quality</h4>
+              <span className="text-[10px] font-mono font-black text-rose-550">{settings.graphicsQuality || 'HIGH'}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1 bg-rose-50/50 p-0.5 rounded-xl border border-rose-100">
+              {(['LOW', 'MEDIUM', 'HIGH'] as const).map((q) => (
+                <button
+                  key={q}
+                  onClick={() => { playClick(); onUpdateSettings({ ...settings, graphicsQuality: q }); }}
+                  className={`py-1 rounded-lg text-[9px] font-bold tracking-widest cursor-pointer transition-all ${
+                    (settings.graphicsQuality || 'HIGH') === q 
+                      ? 'bg-rose-500 text-white shadow-sm font-black' 
+                      : 'text-rose-700 hover:bg-rose-100/30'
+                  }`}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* FPS Limit */}
+          <div className="space-y-2 border-b border-rose-50 pb-3">
+            <div className="flex justify-between items-center">
+              <h4 className="text-xs font-black text-rose-950 uppercase tracking-wider">FPS target</h4>
+              <span className="text-[10px] font-mono font-black text-rose-550">{settings.fpsLimit || 60} FPS</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1 bg-rose-50/50 p-0.5 rounded-xl border border-rose-100">
+              {([30, 60] as const).map((fps) => (
+                <button
+                  key={fps}
+                  onClick={() => { playClick(); onUpdateSettings({ ...settings, fpsLimit: fps }); }}
+                  className={`py-1 rounded-lg text-[9px] font-bold tracking-widest cursor-pointer transition-all ${
+                    (settings.fpsLimit || 60) === fps 
+                      ? 'bg-rose-500 text-white shadow-sm font-black' 
+                      : 'text-rose-700 hover:bg-rose-100/30'
+                  }`}
+                >
+                  {fps} FPS
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Battery Saver */}
+          <div className="flex items-center justify-between border-b border-rose-50 pb-3">
+            <div>
+              <h4 className="text-xs font-black text-rose-950 uppercase tracking-wider">Battery Saver</h4>
+              <p className="text-[9px] text-rose-700 font-semibold uppercase tracking-wider">Lowers particle densities</p>
+            </div>
+            <button
+              onClick={() => {
+                playClick();
+                onUpdateSettings({ ...settings, batterySaver: !settings.batterySaver });
+              }}
+              className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${settings.batterySaver ? 'bg-rose-500' : 'bg-rose-200'}`}
+            >
+              <div className={`bg-white w-4.5 h-4.5 rounded-full shadow-sm transform transition-transform ${settings.batterySaver ? 'translate-x-4.5' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
+          {/* Language Selection */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-black text-rose-950 uppercase tracking-wider">Language Selection</h4>
+            <div className="grid grid-cols-5 gap-1 bg-rose-50/50 p-0.5 rounded-xl border border-rose-100">
+              {(['EN', 'ES', 'FR', 'DE', 'HI'] as const).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => { playClick(); onUpdateSettings({ ...settings, language: lang }); }}
+                  className={`py-1 rounded-lg text-[9px] font-bold tracking-widest cursor-pointer transition-all ${
+                    (settings.language || 'EN') === lang 
+                      ? 'bg-rose-500 text-white shadow-sm font-black' 
+                      : 'text-rose-700 hover:bg-rose-100/30'
+                  }`}
+                >
+                  {lang}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Developer Credits Card */}
+        <div className="bg-gradient-to-r from-amber-500/5 via-rose-500/5 to-pink-500/5 p-4.5 rounded-2xl border border-amber-200/50 shadow-sm text-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-12 h-12 bg-amber-400/10 rounded-full blur-xl" />
+          <h4 className="text-[9px] font-mono font-black text-amber-600 tracking-[0.25em] uppercase mb-1">DEVELOPER EDITION</h4>
+          <p className="text-xs font-extrabold text-rose-950 uppercase tracking-wider">CREATED BY OM BRAHMAN</p>
+          <p className="text-[9px] text-rose-500/80 font-bold uppercase tracking-wider mt-1">PANDA FLAP PREMIUM VERSION 1.0.0</p>
+        </div>
+
         {/* Statistics Card */}
         <div className="bg-white/85 backdrop-blur-md p-4.5 rounded-2xl border border-rose-100 shadow-md space-y-4">
           <h3 className="text-[10px] font-bold tracking-[0.25em] text-rose-450 uppercase">Your Stats</h3>

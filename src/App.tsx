@@ -25,12 +25,21 @@ const DEFAULT_STATS: UserStats = {
     HARD: 0,
     INSANE: 0
   },
-  coins: 0,
+  coins: 100,
   unlockedSkins: ['classic'],
   equippedSkin: 'classic',
   gamesPlayed: 0,
   totalCoinsCollected: 0,
-  storyLevelProgress: 1
+  storyLevelProgress: 1,
+  xp: 0,
+  playerLevel: 1,
+  characterLevels: { classic: 1 },
+  skillsUnlocked: [],
+  luckySpinsRemaining: 1,
+  totalPlayTime: 0,
+  bossesDefeated: 0,
+  missionsCompleted: 0,
+  achievementsClaimed: []
 };
 
 const getTodayDateString = () => {
@@ -44,7 +53,12 @@ export default function App() {
   const [difficulty, setDifficulty] = useState<Difficulty>('MEDIUM');
   const [settings, setSettings] = useState<GameSettings>({
     soundEnabled: true,
-    musicEnabled: true
+    musicEnabled: true,
+    vibrationEnabled: true,
+    graphicsQuality: 'HIGH',
+    fpsLimit: 60,
+    batterySaver: false,
+    language: 'EN'
   });
   const [missions, setMissions] = useState<DailyMission[]>([]);
   const [gameMode, setGameMode] = useState<GameMode>('ENDLESS');
@@ -54,7 +68,15 @@ export default function App() {
   useEffect(() => {
     // Audio Settings
     const audioSet = loadAudioSettings();
-    setSettings(audioSet);
+    setSettings({
+      soundEnabled: audioSet.soundEnabled,
+      musicEnabled: audioSet.musicEnabled,
+      vibrationEnabled: true,
+      graphicsQuality: 'HIGH',
+      fpsLimit: 60,
+      batterySaver: false,
+      language: 'EN'
+    });
 
     // User Stats
     try {

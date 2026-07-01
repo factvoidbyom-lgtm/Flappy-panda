@@ -205,30 +205,23 @@ export default function GameCanvas({
   const activeLevel = gameMode === 'STORY' ? STORY_LEVELS.find((l) => l.id === selectedLevelId) : null;
   const targetScore = activeLevel ? activeLevel.targetScore : null;
 
-  // Pre-load background images uploaded by the user with fallbacks
+  // Pre-load background images uploaded by the user mapping directly to our generated pixel art assets
   const [loadedBgImages, setLoadedBgImages] = useState<Record<string, HTMLImageElement>>({});
 
   useEffect(() => {
-    const urls = [
-      'b5d76d9f-e783-47ce-8e30-9da92ebbd11e.jpeg',
-      'e3ac59d2-1690-47f8-9ac3-05c2505050d1.jpeg',
-      '78b87339-44bb-4ed1-95a2-2df4eb8aa42f.jpeg',
-      'Game Background.jpeg',
-      'Calming pixel art landscape.jpeg'
-    ];
-    
-    urls.forEach((url) => {
+    const assetMap: Record<string, string> = {
+      'b5d76d9f-e783-47ce-8e30-9da92ebbd11e.jpeg': '/src/assets/images/game_background_sunrise_1782892437025.jpg',
+      'Game Background.jpeg': '/src/assets/images/game_background_sunrise_1782892437025.jpg',
+      'e3ac59d2-1690-47f8-9ac3-05c2505050d1.jpeg': '/src/assets/images/game_background_misty_1782892457326.jpg',
+      '78b87339-44bb-4ed1-95a2-2df4eb8aa42f.jpeg': '/src/assets/images/game_background_twilight_1782892473788.jpg',
+      'Calming pixel art landscape.jpeg': '/src/assets/images/game_background_snowy_1782892489799.jpg'
+    };
+
+    Object.entries(assetMap).forEach(([key, srcPath]) => {
       const img = new Image();
-      img.src = `/${url}`;
+      img.src = srcPath;
       img.onload = () => {
-        setLoadedBgImages((prev) => ({ ...prev, [url]: img }));
-      };
-      img.onerror = () => {
-        const fallbackImg = new Image();
-        fallbackImg.src = `/src/assets/images/${url}`;
-        fallbackImg.onload = () => {
-          setLoadedBgImages((prev) => ({ ...prev, [url]: fallbackImg }));
-        };
+        setLoadedBgImages((prev) => ({ ...prev, [key]: img }));
       };
     });
   }, []);

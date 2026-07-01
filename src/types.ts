@@ -9,13 +9,21 @@ export interface PandaSkin {
   name: string;
   cost: number;
   description: string;
-  type: 'classic' | 'red' | 'astro' | 'ninja' | 'golden';
-  accentColor: string; // Tailind class like bg-emerald-400
+  type: 'classic' | 'red' | 'astro' | 'ninja' | 'golden' | 'sakura' | 'frosty' | 'sprite' | 'ghost' | 'cyber' | 'storm' | 'chrono' | 'emperor';
+  accentColor: string;
+  rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
+  ability: string;
+  abilityDesc: string;
 }
 
 export interface GameSettings {
   soundEnabled: boolean;
   musicEnabled: boolean;
+  vibrationEnabled: boolean;
+  graphicsQuality: 'LOW' | 'MEDIUM' | 'HIGH';
+  fpsLimit: 30 | 60;
+  batterySaver: boolean;
+  language: 'EN' | 'ES' | 'FR' | 'DE' | 'HI';
 }
 
 export interface UserStats {
@@ -31,6 +39,16 @@ export interface UserStats {
   gamesPlayed: number;
   totalCoinsCollected: number;
   storyLevelProgress?: number; // 1-based level progress index
+  xp: number;
+  playerLevel: number;
+  characterLevels: Record<string, number>; // skinId -> level
+  skillsUnlocked: string[]; // skill IDs: 'shield_duration' | 'magnet_range' | 'near_miss_xp' | 'extra_multiplier'
+  lastDailyRewardCollected?: string; // date string (YYYY-MM-DD)
+  luckySpinsRemaining: number;
+  totalPlayTime: number; // in seconds
+  bossesDefeated: number;
+  missionsCompleted: number;
+  achievementsClaimed: string[]; // achievement IDs
 }
 
 export interface DifficultyConfig {
@@ -48,7 +66,10 @@ export const SKIN_LIST: PandaSkin[] = [
     cost: 0,
     description: 'The traditional black and white bundle of joy.',
     type: 'classic',
-    accentColor: '#1f2937' // dark gray
+    accentColor: '#1f2937',
+    rarity: 'Common',
+    ability: 'Balance',
+    abilityDesc: 'Standard physics and movement bounds.'
   },
   {
     id: 'red',
@@ -56,31 +77,131 @@ export const SKIN_LIST: PandaSkin[] = [
     cost: 80,
     description: 'A cute, fiery rust-colored forest glider.',
     type: 'red',
-    accentColor: '#ea580c' // orange
+    accentColor: '#ea580c',
+    rarity: 'Common',
+    ability: 'Glide',
+    abilityDesc: 'Falls 20% slower when falling.'
+  },
+  {
+    id: 'sakura',
+    name: 'Sakura Panda',
+    cost: 150,
+    description: 'A beautiful blossom traveler with pink ears.',
+    type: 'sakura',
+    accentColor: '#f43f5e',
+    rarity: 'Common',
+    ability: 'Cherry Blossom',
+    abilityDesc: 'Increases score multiplier gains by 15%.'
   },
   {
     id: 'astro',
     name: 'Astro Panda',
-    cost: 200,
+    cost: 250,
     description: 'Equipped with a space helmet, ready for orbit.',
     type: 'astro',
-    accentColor: '#38bdf8' // light blue
+    accentColor: '#38bdf8',
+    rarity: 'Rare',
+    ability: 'Anti-Gravity',
+    abilityDesc: 'Reduces gravity effect by 15%.'
+  },
+  {
+    id: 'frosty',
+    name: 'Frosty Panda',
+    cost: 350,
+    description: 'A cool, icy panda from the high glacier peaks.',
+    type: 'frosty',
+    accentColor: '#0ea5e9',
+    rarity: 'Rare',
+    ability: 'Snow Drift',
+    abilityDesc: 'Slows down moving bamboo velocities by 30%.'
+  },
+  {
+    id: 'sprite',
+    name: 'Bamboo Sprite',
+    cost: 450,
+    description: 'A glowing green sprite who lives in the forest canopy.',
+    type: 'sprite',
+    accentColor: '#10b981',
+    rarity: 'Rare',
+    ability: 'Nature Grace',
+    abilityDesc: 'Heart bamboo items appear 50% more often.'
   },
   {
     id: 'ninja',
     name: 'Ninja Panda',
-    cost: 350,
+    cost: 650,
     description: 'Silent but deadly. Wears a black mask and headband.',
     type: 'ninja',
-    accentColor: '#4b5563' // gray ninja
+    accentColor: '#4b5563',
+    rarity: 'Epic',
+    ability: 'Double Jump',
+    abilityDesc: 'Allows a secondary jump flap in mid-air!'
+  },
+  {
+    id: 'ghost',
+    name: 'Ghost Panda',
+    cost: 800,
+    description: 'Fades in and out of the spiritual plane.',
+    type: 'ghost',
+    accentColor: '#a855f7',
+    rarity: 'Epic',
+    ability: 'Spectral Phase',
+    abilityDesc: 'Provides 0.6 seconds of phase-invincibility on near-miss.'
+  },
+  {
+    id: 'cyber',
+    name: 'Cyber Panda',
+    cost: 1000,
+    description: 'Augmented with neon circuits and a visor.',
+    type: 'cyber',
+    accentColor: '#06b6d4',
+    rarity: 'Epic',
+    ability: 'Start Shield',
+    abilityDesc: 'Always starts every run with an active shield!'
+  },
+  {
+    id: 'storm',
+    name: 'Storm Panda',
+    cost: 1500,
+    description: 'Surrounded by crackling static and thunderbolts.',
+    type: 'storm',
+    accentColor: '#eab308',
+    rarity: 'Legendary',
+    ability: 'Lightning Bolt',
+    abilityDesc: 'Double click screen to unleash a short hyper-dash!'
   },
   {
     id: 'golden',
     name: 'Golden Panda',
-    cost: 600,
+    cost: 2000,
     description: 'Shiny and pure gold. Absolute royalty.',
     type: 'golden',
-    accentColor: '#fbbf24' // gold yellow
+    accentColor: '#fbbf24',
+    rarity: 'Legendary',
+    ability: 'Midas Touch',
+    abilityDesc: 'Causes all normal coins to have double value.'
+  },
+  {
+    id: 'chrono',
+    name: 'Chrono Panda',
+    cost: 3000,
+    description: 'Wields the mysterious gear of time travel.',
+    type: 'chrono',
+    accentColor: '#ec4899',
+    rarity: 'Mythic',
+    ability: 'Time Bend',
+    abilityDesc: 'Slows down the base speed of obstacles by 15%.'
+  },
+  {
+    id: 'emperor',
+    name: 'Emperor Panda',
+    cost: 5000,
+    description: 'The royal ruler of the bamboo empire.',
+    type: 'emperor',
+    accentColor: '#ef4444',
+    rarity: 'Mythic',
+    ability: 'Imperial Will',
+    abilityDesc: 'Increases starting maximum hearts count to 4.'
   }
 ];
 
