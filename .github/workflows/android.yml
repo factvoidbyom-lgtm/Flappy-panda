@@ -2,8 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -11,37 +10,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup Node
+      # Node setup
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
+          node-version: 20
 
       - name: Install dependencies
-        run: npm install --ignore-scripts
+        run: npm install
 
-      - name: Build Web
+      - name: Build web app
         run: npm run build
 
+      # Capacitor sync
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      # Java setup
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Sync Capacitor
-        run: npx cap sync android
+      # Setup Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
+      # Give permission
+      - name: Make Gradle executable
+        run: chmod +x android/gradlew
+
+      # Build APK
       - name: Build APK
         working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
+        run: ./gradlew assembleDebug
 
+      # Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: PandaSkyAdventure-debug
+          name: app-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
