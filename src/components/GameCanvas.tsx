@@ -45,6 +45,90 @@ interface Cloud {
   scale: number;
 }
 
+export interface EndlessTheme {
+  id: string;
+  name: string;
+  theme: 'sunrise' | 'snow' | 'mist' | 'twilight' | 'tempest' | 'mystic_jungle' | 'sunny_ridges' | 'retro_bliss' | 'sunset_grove';
+  weather: 'clear' | 'snow' | 'mist' | 'rain_lightning' | 'fireflies' | 'leaves';
+  bgGradStart: string;
+  bgGradEnd: string;
+}
+
+export const ENDLESS_THEMES: EndlessTheme[] = [
+  {
+    id: 'sunrise_sanctuary',
+    name: 'Sunrise Sanctuary',
+    theme: 'sunrise',
+    weather: 'clear',
+    bgGradStart: '#fff7ed', // warm sunrise gold
+    bgGradEnd: '#fecdd3',   // sweet cherry blossom rose
+  },
+  {
+    id: 'snowy_zen_peaks',
+    name: 'Snowy Zen Peaks',
+    theme: 'snow',
+    weather: 'snow',
+    bgGradStart: '#e0f2fe', // frosty azure blue
+    bgGradEnd: '#bae6fd',   // soft snow-sky
+  },
+  {
+    id: 'misty_bamboo_grove',
+    name: 'Misty Bamboo Grove',
+    theme: 'mist',
+    weather: 'mist',
+    bgGradStart: '#f1f5f9', // ancient morning fog slate
+    bgGradEnd: '#cbd5e1',   // deep mist gray
+  },
+  {
+    id: 'twilight_fireflies',
+    name: 'Twilight Fireflies',
+    theme: 'twilight',
+    weather: 'clear', // draws twinkling stars
+    bgGradStart: '#1e1b4b', // deep twilight violet-indigo
+    bgGradEnd: '#312e81',   // electric night purple
+  },
+  {
+    id: 'cosmic_tempest',
+    name: 'Cosmic Tempest',
+    theme: 'tempest',
+    weather: 'rain_lightning',
+    bgGradStart: '#090d16', // dark midnight tempest grey
+    bgGradEnd: '#1e293b',   // electric storm purple-slate
+  },
+  {
+    id: 'mystic_jungle',
+    name: 'Mystic Jungle Cave',
+    theme: 'mystic_jungle',
+    weather: 'fireflies', // draws green/yellow fireflies
+    bgGradStart: '#05180f', // deep black-green jungle moss
+    bgGradEnd: '#102e1c',   // jade stone green
+  },
+  {
+    id: 'sunny_ridges',
+    name: 'Sunny Ridge Pines',
+    theme: 'sunny_ridges',
+    weather: 'clear',
+    bgGradStart: '#0ea5e9', // brilliant sky blue
+    bgGradEnd: '#7dd3fc',   // warm summer horizon
+  },
+  {
+    id: 'retro_bliss',
+    name: 'Nostalgic Bliss Hills',
+    theme: 'retro_bliss',
+    weather: 'clear',
+    bgGradStart: '#1d4ed8', // legendary Windows XP sky blue
+    bgGradEnd: '#93c5fd',   // soft edge white blue
+  },
+  {
+    id: 'sunset_grove',
+    name: 'Sunset Grove',
+    theme: 'sunset_grove',
+    weather: 'leaves', // falling golden maple leaves
+    bgGradStart: '#fdba74', // warm amber sunset glow
+    bgGradEnd: '#f43f5e',   // deep raspberry rose horizon
+  }
+];
+
 export default function GameCanvas({
   difficulty,
   equippedSkinId,
@@ -73,6 +157,9 @@ export default function GameCanvas({
   const [activeMagnet, setActiveMagnet] = useState(0);
   const [activeShield, setActiveShield] = useState(false);
   const [hearts, setHearts] = useState(3);
+
+  // Active endless theme (randomized every run)
+  const [activeEndlessTheme, setActiveEndlessTheme] = useState<EndlessTheme | null>(null);
 
   // References to keep game loop variables running outside React re-renders
   const stateRef = useRef({
@@ -105,13 +192,46 @@ export default function GameCanvas({
     shakeIntensity: 0,
     lightningFlash: 0,
     isCountdownActive: false,
-    countdownTimer: 0
+    countdownTimer: 0,
+    activeEndlessTheme: null as EndlessTheme | null,
+    lastThemeChangeScore: 0,
+    currentBgStart: '',
+    currentBgEnd: '',
+    bgScrollX: 0
   });
 
   const skin = SKIN_LIST.find((s) => s.id === equippedSkinId) || SKIN_LIST[0];
   const config = DIFFICULTY_CONFIGS[difficulty];
   const activeLevel = gameMode === 'STORY' ? STORY_LEVELS.find((l) => l.id === selectedLevelId) : null;
   const targetScore = activeLevel ? activeLevel.targetScore : null;
+
+  // Pre-load background images uploaded by the user with fallbacks
+  const [loadedBgImages, setLoadedBgImages] = useState<Record<string, HTMLImageElement>>({});
+
+  useEffect(() => {
+    const urls = [
+      'b5d76d9f-e783-47ce-8e30-9da92ebbd11e.jpeg',
+      'e3ac59d2-1690-47f8-9ac3-05c2505050d1.jpeg',
+      '78b87339-44bb-4ed1-95a2-2df4eb8aa42f.jpeg',
+      'Game Background.jpeg',
+      'Calming pixel art landscape.jpeg'
+    ];
+    
+    urls.forEach((url) => {
+      const img = new Image();
+      img.src = `/${url}`;
+      img.onload = () => {
+        setLoadedBgImages((prev) => ({ ...prev, [url]: img }));
+      };
+      img.onerror = () => {
+        const fallbackImg = new Image();
+        fallbackImg.src = `/src/assets/images/${url}`;
+        fallbackImg.onload = () => {
+          setLoadedBgImages((prev) => ({ ...prev, [url]: fallbackImg }));
+        };
+      };
+    });
+  }, []);
 
   // Load high scores
   useEffect(() => {
@@ -126,7 +246,14 @@ export default function GameCanvas({
     } catch (e) {
       console.error(e);
     }
-  }, [difficulty]);
+
+    // Pick a brand new random theme for Endless Mode runs on load
+    if (gameMode === 'ENDLESS') {
+      const randomTheme = ENDLESS_THEMES[Math.floor(Math.random() * ENDLESS_THEMES.length)];
+      setActiveEndlessTheme(randomTheme);
+      stateRef.current.activeEndlessTheme = randomTheme;
+    }
+  }, [difficulty, gameMode]);
 
   // Handle ResizeObserver to update canvas aspect ratio
   useEffect(() => {
@@ -185,10 +312,21 @@ export default function GameCanvas({
   // Restart local game state
   const resetGame = () => {
     const s = stateRef.current;
+
+    if (gameMode === 'ENDLESS') {
+      const randomTheme = ENDLESS_THEMES[Math.floor(Math.random() * ENDLESS_THEMES.length)];
+      setActiveEndlessTheme(randomTheme);
+      s.activeEndlessTheme = randomTheme;
+    }
+
     s.score = 0;
     s.coinsCollected = 0;
     s.jumpsCount = 0;
     s.hearts = 3;
+    s.lastThemeChangeScore = 0;
+    s.currentBgStart = '';
+    s.currentBgEnd = '';
+    s.bgScrollX = 0;
     s.panda = {
       y: s.height / 2 - 20,
       vy: 0,
@@ -218,6 +356,10 @@ export default function GameCanvas({
     resetGame();
     setIsPlaying(true);
     setShowGetReady(false);
+    
+    // Trigger professional 3-second starting countdown with camera zoom!
+    stateRef.current.isCountdownActive = true;
+    stateRef.current.countdownTimer = 180; // 3 seconds (180 frames at 60 FPS)
   };
 
   const triggerJump = () => {
@@ -283,6 +425,8 @@ export default function GameCanvas({
       if (s.isPlaying && !s.isPaused && !s.isGameOver) {
         if (s.isCountdownActive) {
           s.countdownTimer--;
+          // Scroll ground/floor slowly during the pre-game countdown
+          s.floorOffset = (s.floorOffset - config.speed * 0.45) % 30;
           if (s.countdownTimer <= 0) {
             s.isCountdownActive = false;
           }
@@ -395,6 +539,36 @@ export default function GameCanvas({
             b.passed = true;
             s.score++;
             setScore(s.score);
+
+            // Dynamic background shift every 5 points in endless mode
+            if (gameMode === 'ENDLESS' && s.score > 0 && s.score % 5 === 0 && s.score !== s.lastThemeChangeScore) {
+              s.lastThemeChangeScore = s.score;
+              const currentThemeId = s.activeEndlessTheme?.id;
+              const availableThemes = ENDLESS_THEMES.filter(t => t.id !== currentThemeId);
+              const nextTheme = availableThemes[Math.floor(Math.random() * availableThemes.length)];
+              s.activeEndlessTheme = nextTheme;
+
+              // Cinematic environmental shift indicators
+              s.lightningFlash = 25; // 25 frames of soft visual environmental illumination
+              s.shakeTimer = 10;
+              s.shakeIntensity = 4;
+
+              // Spawn celebration sparkle transition particles
+              for (let ptIdx = 0; ptIdx < 20; ptIdx++) {
+                s.particles.push({
+                  x: Math.random() * s.width,
+                  y: Math.random() * s.height,
+                  vx: -1.5 + Math.random() * 3,
+                  vy: -1.5 + Math.random() * 3,
+                  size: 3 + Math.random() * 6,
+                  color: 'rgba(255, 255, 255, 0.85)',
+                  alpha: 0.9,
+                  life: 0,
+                  maxLife: 40 + Math.random() * 20,
+                  type: 'coin'
+                });
+              }
+            }
           }
 
           // Remove offscreen
@@ -446,6 +620,15 @@ export default function GameCanvas({
               setHearts(s.hearts);
               s.activeInvulTime = 90; // 1.5s of flashing invulnerability
               playFlap(); // soft impact audio
+
+              // Screen shaking: light-medium shake if hearts remain, hard shake if out of hearts
+              if (s.hearts > 0) {
+                s.shakeTimer = 18;
+                s.shakeIntensity = 8;
+              } else {
+                s.shakeTimer = 45;
+                s.shakeIntensity = 22;
+              }
 
               // Explode damage particles
               for (let k = 0; k < 20; k++) {
@@ -631,54 +814,153 @@ export default function GameCanvas({
         s.shakeTimer--;
       }
 
-      // A. Sky Backdrop Gradient
-      let gStart = '#fff5f6';
-      let gEnd = '#ffccd5';
-      if (gameMode === 'STORY' && activeLevel) {
-        gStart = activeLevel.bgGradStart;
-        gEnd = activeLevel.bgGradEnd;
+      // Camera Zoom Effect centered on Panda (3...2...1... GO countdown zooms in!)
+      let currentZoom = 1.0;
+      if (s.isCountdownActive) {
+        const zoomProgress = Math.max(0, s.countdownTimer / 180);
+        currentZoom = 1.0 + zoomProgress * 0.35;
+      }
+      if (currentZoom !== 1.0) {
+        const pandaY = s.panda.y;
+        ctx.translate(100, pandaY);
+        ctx.scale(currentZoom, currentZoom);
+        ctx.translate(-100, -pandaY);
       }
 
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-      skyGrad.addColorStop(0, gStart);
-      skyGrad.addColorStop(1, gEnd);
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, width, height);
+      // A. Sky Backdrop Gradient or Loaded Custom Background Image
+      let gStart = '#fff5f6';
+      let gEnd = '#ffccd5';
+      const isStory = gameMode === 'STORY';
+      const curTheme = isStory ? activeLevel?.theme : s.activeEndlessTheme?.theme;
+      const curWeather = isStory ? activeLevel?.weather : s.activeEndlessTheme?.weather;
 
-      // B. Celestial Bodies
-      if (gameMode === 'STORY' && activeLevel?.theme === 'sunrise') {
-        // Draw Sunrise Sun
+      if (isStory && activeLevel) {
+        gStart = activeLevel.bgGradStart;
+        gEnd = activeLevel.bgGradEnd;
+      } else if (!isStory && s.activeEndlessTheme) {
+        gStart = s.activeEndlessTheme.bgGradStart;
+        gEnd = s.activeEndlessTheme.bgGradEnd;
+      }
+
+      // Smooth color morphing transitions
+      if (!s.currentBgStart) {
+        s.currentBgStart = gStart;
+        s.currentBgEnd = gEnd;
+      } else {
+        const hexToRgb = (hex: string) => {
+          const res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+          return res ? {
+            r: parseInt(res[1], 16),
+            g: parseInt(res[2], 16),
+            b: parseInt(res[3], 16)
+          } : { r: 255, g: 255, b: 255 };
+        };
+        const rgbToHex = (r: number, g: number, b: number) => {
+          const clampVal = (v: number) => Math.min(255, Math.max(0, Math.round(v)));
+          return "#" + ((1 << 24) + (clampVal(r) << 16) + (clampVal(g) << 8) + clampVal(b)).toString(16).slice(1);
+        };
+
+        const curS = hexToRgb(s.currentBgStart);
+        const curE = hexToRgb(s.currentBgEnd);
+        const tarS = hexToRgb(gStart);
+        const tarE = hexToRgb(gEnd);
+        
+        const nextS = {
+          r: curS.r + (tarS.r - curS.r) * 0.02,
+          g: curS.g + (tarS.g - curS.g) * 0.02,
+          b: curS.b + (tarS.b - curS.b) * 0.02,
+        };
+        const nextE = {
+          r: curE.r + (tarE.r - curE.r) * 0.02,
+          g: curE.g + (tarE.g - curE.g) * 0.02,
+          b: curE.b + (tarE.b - curE.b) * 0.02,
+        };
+        s.currentBgStart = rgbToHex(nextS.r, nextS.g, nextS.b);
+        s.currentBgEnd = rgbToHex(nextE.r, nextE.g, nextE.b);
+      }
+
+      // Draw loaded background image if available, with scrolling/panning animation, otherwise draw gradient
+      let selectedBgImg: HTMLImageElement | null = null;
+      if (curTheme === 'twilight' || curTheme === 'tempest') {
+        selectedBgImg = loadedBgImages['78b87339-44bb-4ed1-95a2-2df4eb8aa42f.jpeg'] || null;
+      } else if (curTheme === 'mist' || curTheme === 'mystic_jungle') {
+        selectedBgImg = loadedBgImages['e3ac59d2-1690-47f8-9ac3-05c2505050d1.jpeg'] || null;
+      } else if (curTheme === 'snow') {
+        selectedBgImg = loadedBgImages['Calming pixel art landscape.jpeg'] || null;
+      } else {
+        selectedBgImg = loadedBgImages['b5d76d9f-e783-47ce-8e30-9da92ebbd11e.jpeg'] || loadedBgImages['Game Background.jpeg'] || null;
+      }
+
+      if (!selectedBgImg && Object.keys(loadedBgImages).length > 0) {
+        const firstKey = Object.keys(loadedBgImages)[0];
+        selectedBgImg = loadedBgImages[firstKey];
+      }
+
+      if (selectedBgImg) {
+        // Draw the beautifully scrolling/animating background image
+        // Scroll the background slowly for a beautiful parallax depth effect
+        if (s.isPlaying && !s.isPaused && !s.isGameOver && !s.isCountdownActive) {
+          s.bgScrollX = (s.bgScrollX - config.speed * 0.15) % width;
+        } else if (s.isCountdownActive) {
+          // Slowly scroll during countdown
+          s.bgScrollX = (s.bgScrollX - config.speed * 0.05) % width;
+        }
+        
+        const scale = height / selectedBgImg.height;
+        const imgWidth = selectedBgImg.width * scale;
+        
+        let bx = s.bgScrollX % imgWidth;
+        if (bx > 0) bx -= imgWidth;
+        
+        while (bx < width) {
+          ctx.drawImage(selectedBgImg, bx, 0, imgWidth, height);
+          bx += imgWidth;
+        }
+      } else {
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+        skyGrad.addColorStop(0, s.currentBgStart);
+        skyGrad.addColorStop(1, s.currentBgEnd);
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      // B. Celestial Bodies & Landmarks (e.g. Hills, Mountains, Vines)
+      if (curTheme === 'sunrise' || curTheme === 'sunset_grove') {
+        // Draw Sunrise/Sunset Sun
         ctx.save();
-        ctx.fillStyle = 'rgba(251, 146, 60, 0.45)'; // orange-400 aura
+        ctx.fillStyle = curTheme === 'sunset_grove' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(251, 146, 60, 0.45)';
         ctx.beginPath();
         ctx.arc(width - 80, 100, 36, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = 'rgba(254, 215, 170, 0.85)'; // amber-200 center
+        ctx.fillStyle = curTheme === 'sunset_grove' ? 'rgba(253, 186, 116, 0.85)' : 'rgba(254, 215, 170, 0.85)';
         ctx.beginPath();
         ctx.arc(width - 80, 100, 24, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
 
-        // Draw a soft celestial rainbow arc in the background
-        ctx.save();
-        ctx.strokeStyle = 'rgba(251, 113, 133, 0.12)'; // red-400 soft tint
-        ctx.lineWidth = 14;
-        ctx.beginPath();
-        ctx.arc(width / 2, height / 2 + 50, 160, Math.PI, 0, false);
-        ctx.stroke();
-        ctx.strokeStyle = 'rgba(253, 224, 71, 0.1)'; // yellow-300 tint
-        ctx.lineWidth = 8;
-        ctx.stroke();
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)'; // sky-450 tint
-        ctx.lineWidth = 4;
-        ctx.stroke();
-        ctx.restore();
+        // Draw soft rainbow arc for sunrise only
+        if (curTheme === 'sunrise') {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(251, 113, 133, 0.12)';
+          ctx.lineWidth = 14;
+          ctx.beginPath();
+          ctx.arc(width / 2, height / 2 + 50, 160, Math.PI, 0, false);
+          ctx.stroke();
+          ctx.strokeStyle = 'rgba(253, 224, 71, 0.1)';
+          ctx.lineWidth = 8;
+          ctx.stroke();
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+          ctx.lineWidth = 4;
+          ctx.stroke();
+          ctx.restore();
+        }
       }
 
-      if (gameMode === 'STORY' && (activeLevel?.theme === 'twilight' || activeLevel?.theme === 'tempest')) {
+      if (curTheme === 'twilight' || curTheme === 'tempest' || curTheme === 'mystic_jungle') {
         // Draw Twinkling Stars
         ctx.fillStyle = '#ffffff';
-        for (let i = 0; i < 20; i++) {
+        const starCount = curTheme === 'mystic_jungle' ? 10 : 20;
+        for (let i = 0; i < starCount; i++) {
           const starX = (i * 29 + 13) % width;
           const starY = (i * 17 + 23) % (height / 2);
           const starAlpha = 0.2 + Math.sin(s.frameCount * 0.04 + i) * 0.5;
@@ -688,16 +970,14 @@ export default function GameCanvas({
           ctx.restore();
         }
 
-        // Draw Moonlight / Moon vector
-        if (activeLevel?.theme === 'tempest') {
+        // Draw Moonlight / Moon
+        if (curTheme === 'tempest' || curTheme === 'twilight') {
           ctx.save();
-          // Glow aura
-          ctx.fillStyle = 'rgba(241, 245, 249, 0.1)';
+          ctx.fillStyle = curTheme === 'twilight' ? 'rgba(129, 140, 248, 0.1)' : 'rgba(241, 245, 249, 0.1)';
           ctx.beginPath();
           ctx.arc(width - 90, 90, 42, 0, Math.PI * 2);
           ctx.fill();
-          // Moon core
-          ctx.fillStyle = '#f1f5f9';
+          ctx.fillStyle = curTheme === 'twilight' ? '#e0e7ff' : '#f1f5f9';
           ctx.beginPath();
           ctx.arc(width - 90, 90, 26, 0, Math.PI * 2);
           ctx.fill();
@@ -705,40 +985,92 @@ export default function GameCanvas({
         }
       }
 
-      // C. Deep Background Swaying Parallax Bamboo Layer (30% speed)
-      ctx.fillStyle = gameMode === 'STORY' && activeLevel?.theme === 'twilight' 
-        ? 'rgba(49, 46, 129, 0.12)' 
-        : gameMode === 'STORY' && activeLevel?.theme === 'tempest'
-        ? 'rgba(15, 23, 42, 0.2)' 
-        : 'rgba(52, 211, 153, 0.08)';
-      
-      const bgOffsetFactor = 0.28;
-      const bgScroll = (s.frameCount * bgOffsetFactor) % 200;
-      for (let bx = -bgScroll; bx < width + 100; bx += 100) {
-        const sway = Math.sin(s.frameCount * 0.012 + bx) * 4;
-        ctx.fillRect(bx + sway, 0, 16, height - 50);
+      // Special Background Landmarks
+      if (curTheme === 'retro_bliss') {
+        ctx.save();
+        // Draw blissful curved rolling hills at the bottom
+        const hillGrad = ctx.createLinearGradient(0, height - 120, 0, height);
+        hillGrad.addColorStop(0, '#22c55e');
+        hillGrad.addColorStop(1, '#15803d');
+        ctx.fillStyle = hillGrad;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        ctx.lineTo(0, height - 80);
+        ctx.quadraticCurveTo(width * 0.4, height - 120, width * 0.7, height - 60);
+        ctx.quadraticCurveTo(width * 0.85, height - 40, width, height - 70);
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
       }
 
-      // D. Mid-ground Parallax Layer (60% speed)
-      ctx.fillStyle = gameMode === 'STORY' && activeLevel?.theme === 'twilight' 
-        ? 'rgba(49, 46, 129, 0.25)' 
-        : gameMode === 'STORY' && activeLevel?.theme === 'tempest'
-        ? 'rgba(15, 23, 42, 0.35)'
-        : 'rgba(16, 185, 129, 0.13)';
+      if (curTheme === 'sunny_ridges') {
+        ctx.save();
+        // Distant mountain ranges
+        ctx.fillStyle = 'rgba(13, 148, 136, 0.15)';
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        ctx.lineTo(0, height - 140);
+        ctx.lineTo(width * 0.3, height - 210);
+        ctx.lineTo(width * 0.6, height - 130);
+        ctx.lineTo(width * 0.8, height - 170);
+        ctx.lineTo(width, height - 110);
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fill();
 
-      const midOffsetFactor = 0.55;
-      const midScroll = (s.frameCount * midOffsetFactor) % 160;
-      for (let bx = -midScroll; bx < width + 100; bx += 80) {
-        const sway = Math.sin(s.frameCount * 0.02 + bx) * 6;
-        ctx.fillRect(bx + sway, 0, 24, height - 50);
+        // Pine trees at the horizon
+        ctx.fillStyle = 'rgba(15, 118, 110, 0.25)';
+        for (let i = 0; i < 6; i++) {
+          const pineX = (i * 75) % (width + 40) - 20;
+          const pineY = height - 50;
+          const pineH = 45 + (i % 3) * 12;
+          ctx.beginPath();
+          ctx.moveTo(pineX, pineY);
+          ctx.lineTo(pineX - 12, pineY);
+          ctx.lineTo(pineX, pineY - pineH);
+          ctx.lineTo(pineX + 12, pineY);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.restore();
       }
+
+      if (curTheme === 'mystic_jungle') {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(6, 78, 59, 0.35)';
+        ctx.lineWidth = 2.5;
+        // Draw hanging vines from the top
+        for (let vi = 0; vi < 3; vi++) {
+          const vineX = (vi * 130 + 50) % width;
+          const vineH = 80 + vi * 30 + Math.sin(s.frameCount * 0.01 + vi) * 10;
+          ctx.beginPath();
+          ctx.moveTo(vineX, 0);
+          ctx.quadraticCurveTo(vineX + Math.sin(s.frameCount * 0.015 + vi) * 12, vineH * 0.5, vineX, vineH);
+          ctx.stroke();
+
+          // Vines leaves
+          ctx.fillStyle = 'rgba(16, 185, 129, 0.45)';
+          for (let ly = 15; ly < vineH - 5; ly += 20) {
+            ctx.beginPath();
+            ctx.ellipse(vineX + Math.sin(s.frameCount * 0.015 + vi + ly) * 4, ly, 4, 2, 0.4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+      }
+
+      // C. Deep Background Swaying Parallax Bamboo Layer and Mid-ground Parallax Layer removed to eliminate vertical "dancing light" bars as requested.
+
 
       // E. Parallax Soft Fluffy Clouds
-      ctx.fillStyle = gameMode === 'STORY' && activeLevel?.theme === 'twilight'
-        ? 'rgba(99, 102, 241, 0.25)' // twilight purplish clouds
-        : gameMode === 'STORY' && activeLevel?.theme === 'tempest'
-        ? 'rgba(30, 41, 59, 0.5)' // dark stormy clouds
-        : 'rgba(255, 255, 255, 0.75)'; // classic fluffy white clouds
+      let cloudColor = 'rgba(255, 255, 255, 0.75)';
+      if (curTheme === 'twilight') cloudColor = 'rgba(99, 102, 241, 0.25)';
+      else if (curTheme === 'tempest') cloudColor = 'rgba(30, 41, 59, 0.5)';
+      else if (curTheme === 'mystic_jungle') cloudColor = 'rgba(16, 185, 129, 0.1)';
+      else if (curTheme === 'sunset_grove') cloudColor = 'rgba(254, 205, 211, 0.45)';
+      ctx.fillStyle = cloudColor;
 
       s.clouds.forEach((c) => {
         ctx.save();
@@ -756,49 +1088,51 @@ export default function GameCanvas({
       });
 
       // F. Dynamic Wildlife & Weather Layers
-      // Flying birds (V-shapes)
-      ctx.strokeStyle = gameMode === 'STORY' && activeLevel?.theme === 'twilight' 
-        ? 'rgba(255, 255, 255, 0.2)' 
-        : gameMode === 'STORY' && activeLevel?.theme === 'tempest'
-        ? 'rgba(255, 255, 255, 0.15)'
-        : 'rgba(75, 85, 99, 0.35)';
-      ctx.lineWidth = 1.6;
-      for (let bi = 0; bi < 2; bi++) {
-        const bx = (bi * 180 + s.frameCount * 0.7) % (width + 100) - 50;
-        const by = 60 + bi * 35 + Math.sin(s.frameCount * 0.015 + bi) * 12;
-        const flap = Math.sin(s.frameCount * 0.11 + bi) * 3.5;
-        ctx.beginPath();
-        ctx.moveTo(bx - 8, by + flap);
-        ctx.quadraticCurveTo(bx - 4, by - 4, bx, by);
-        ctx.quadraticCurveTo(bx + 4, by - 4, bx + 8, by + flap);
-        ctx.stroke();
+      // Flying birds (V-shapes) - only in suitable sky themes
+      if (curTheme !== 'tempest' && curTheme !== 'mystic_jungle') {
+        ctx.strokeStyle = curTheme === 'twilight' 
+          ? 'rgba(255, 255, 255, 0.2)' 
+          : 'rgba(75, 85, 99, 0.35)';
+        ctx.lineWidth = 1.6;
+        for (let bi = 0; bi < 2; bi++) {
+          const bx = (bi * 180 + s.frameCount * 0.7) % (width + 100) - 50;
+          const by = 60 + bi * 35 + Math.sin(s.frameCount * 0.015 + bi) * 12;
+          const flap = Math.sin(s.frameCount * 0.11 + bi) * 3.5;
+          ctx.beginPath();
+          ctx.moveTo(bx - 8, by + flap);
+          ctx.quadraticCurveTo(bx - 4, by - 4, bx, by);
+          ctx.quadraticCurveTo(bx + 4, by - 4, bx + 8, by + flap);
+          ctx.stroke();
+        }
       }
 
-      // Butterfies fluttering around
-      for (let bi = 0; bi < 2; bi++) {
-        const bfx = (bi * 200 + Math.sin(s.frameCount * 0.012 + bi) * 35) % width;
-        const bfy = 220 + bi * 110 + Math.cos(s.frameCount * 0.02 + bi) * 45;
-        const wingFlap = Math.sin(s.frameCount * 0.22 + bi) > 0;
-        
-        ctx.save();
-        ctx.translate(bfx, bfy);
-        ctx.fillStyle = bi % 2 === 0 ? '#fda4af' : '#fde047'; // pink/yellow pastel
-        
-        ctx.beginPath();
-        ctx.ellipse(wingFlap ? -3 : -5, -2, 4.5, 3.5, -0.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(wingFlap ? 3 : 5, -2, 4.5, 3.5, 0.2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(-0.8, -3.5, 1.6, 6);
-        ctx.restore();
+      // Butterflies fluttering around
+      if (curTheme !== 'tempest' && curTheme !== 'twilight') {
+        for (let bi = 0; bi < 2; bi++) {
+          const bfx = (bi * 200 + Math.sin(s.frameCount * 0.012 + bi) * 35) % width;
+          const bfy = 220 + bi * 110 + Math.cos(s.frameCount * 0.02 + bi) * 45;
+          const wingFlap = Math.sin(s.frameCount * 0.22 + bi) > 0;
+          
+          ctx.save();
+          ctx.translate(bfx, bfy);
+          ctx.fillStyle = bi % 2 === 0 ? '#fda4af' : '#fde047';
+          
+          ctx.beginPath();
+          ctx.ellipse(wingFlap ? -3 : -5, -2, 4.5, 3.5, -0.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(wingFlap ? 3 : 5, -2, 4.5, 3.5, 0.2, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = '#334155';
+          ctx.fillRect(-0.8, -3.5, 1.6, 6);
+          ctx.restore();
+        }
       }
 
       // Rain (tempest weather)
-      if (gameMode === 'STORY' && activeLevel?.weather === 'rain_lightning') {
-        ctx.strokeStyle = 'rgba(186, 230, 253, 0.35)'; // sky-200 transparent rain
+      if (curWeather === 'rain_lightning') {
+        ctx.strokeStyle = 'rgba(186, 230, 253, 0.35)';
         ctx.lineWidth = 1;
         for (let ri = 0; ri < 16; ri++) {
           const rx = (ri * 40 + s.frameCount * 3.5) % (width + 40) - 20;
@@ -809,7 +1143,6 @@ export default function GameCanvas({
           ctx.stroke();
         }
 
-        // Lightning triggering sequences
         if (s.frameCount % 240 === 180) {
           s.shakeTimer = 16;
           s.shakeIntensity = 5.5;
@@ -824,7 +1157,7 @@ export default function GameCanvas({
       }
 
       // Snow (snow weather)
-      if (gameMode === 'STORY' && activeLevel?.weather === 'snow') {
+      if (curWeather === 'snow') {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
         for (let si = 0; si < 15; si++) {
           const sx = (si * 45 + Math.sin(s.frameCount * 0.02 + si) * 15) % (width + 40) - 20;
@@ -836,20 +1169,23 @@ export default function GameCanvas({
       }
 
       // Mist bands (mist weather)
-      if (gameMode === 'STORY' && activeLevel?.weather === 'mist') {
+      if (curWeather === 'mist') {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
         for (let mi = 0; mi < 3; mi++) {
           const my = 120 + mi * 130;
-          const mOffset = (s.frameCount * (0.2 + mi * 0.08)) % width;
           ctx.beginPath();
           ctx.ellipse(width / 2 + Math.sin(s.frameCount * 0.008 + mi) * 25, my, width, 38, 0, 0, Math.PI * 2);
           ctx.fill();
         }
       }
 
-      // Falling Leaves / Cherry blossoms
-      if (gameMode === 'STORY' && (activeLevel?.theme === 'sunrise' || activeLevel?.theme === 'mist')) {
-        ctx.fillStyle = activeLevel?.theme === 'sunrise' ? 'rgba(244, 63, 94, 0.65)' : 'rgba(16, 185, 129, 0.55)'; // rose vs mint
+      // Falling Leaves / Maple / blossoms
+      if (curWeather === 'leaves' || curTheme === 'sunrise' || curTheme === 'mist' || curTheme === 'sunset_grove') {
+        ctx.fillStyle = curTheme === 'sunset_grove' 
+          ? 'rgba(234, 88, 12, 0.65)' 
+          : curTheme === 'sunrise' 
+          ? 'rgba(244, 63, 94, 0.65)' 
+          : 'rgba(16, 185, 129, 0.55)';
         for (let li = 0; li < 6; li++) {
           const lx = (li * 75 - s.frameCount * 1.1) % (width + 40) + 10;
           const ly = (li * 105 + s.frameCount * 0.75 + Math.sin(s.frameCount * 0.025 + li) * 18) % height;
@@ -863,6 +1199,27 @@ export default function GameCanvas({
         }
       }
 
+      // Floating Fireflies (fireflies weather)
+      if (curWeather === 'fireflies') {
+        for (let fi = 0; fi < 12; fi++) {
+          const fx = (fi * 35 + Math.sin(s.frameCount * 0.025 + fi) * 20) % (width + 20) - 10;
+          const fy = (fi * 45 + Math.cos(s.frameCount * 0.015 + fi) * 25 + s.frameCount * 0.15) % (height - 60);
+          const alpha = 0.3 + Math.sin(s.frameCount * 0.05 + fi) * 0.5;
+          
+          ctx.save();
+          ctx.globalAlpha = Math.max(0.1, alpha);
+          ctx.fillStyle = 'rgba(234, 179, 8, 0.15)';
+          ctx.beginPath();
+          ctx.arc(fx, fy, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath();
+          ctx.arc(fx, fy, 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
       // C. Draw Bamboos, Coins & Power-ups
       s.bamboos.forEach((b) => {
         const topHeight = b.gapCenter - b.gapSize / 2;
@@ -871,22 +1228,106 @@ export default function GameCanvas({
 
         ctx.save();
 
-        // Bamboo Sage / Mint Green Gradient - Sweet Pastel Greens
-        // Special coloring for Heart Bamboo
+        // Dynamic theme-specific obstacle and leaf styling
         const bamGrad = ctx.createLinearGradient(b.x, 0, b.x + bWidth, 0);
+        let bStrokeColor = '#065f46';
+        let nodeFillColor = '#059669';
+        let leafFillColor = '#10b981';
+        let leafStrokeColor = '#047857';
+
         if (b.hasPowerup === 'heart') {
           bamGrad.addColorStop(0, '#ec4899');   // pink-500
           bamGrad.addColorStop(0.3, '#fbcfe8'); // pink-200 highlight
           bamGrad.addColorStop(0.8, '#f472b6'); // pink-400 highlight
           bamGrad.addColorStop(1, '#9d174d');   // pink-800 shadow
-          ctx.strokeStyle = '#9d174d';
+          bStrokeColor = '#9d174d';
+          nodeFillColor = '#9d174d';
+          leafFillColor = '#f43f5e';
+          leafStrokeColor = '#9d174d';
         } else {
-          bamGrad.addColorStop(0, '#34d399');   // sweet emerald mint
-          bamGrad.addColorStop(0.3, '#a7f3d0'); // soft sage green highlight
-          bamGrad.addColorStop(0.8, '#6ee7b7'); // mint highlight
-          bamGrad.addColorStop(1, '#059669');   // deeper green shadow
-          ctx.strokeStyle = '#065f46';
+          if (curTheme === 'tempest') {
+            // Dark stormy metallic columns
+            bamGrad.addColorStop(0, '#475569');   // slate-600
+            bamGrad.addColorStop(0.3, '#94a3b8'); // slate-400 highlight
+            bamGrad.addColorStop(0.8, '#64748b'); // slate-500 highlight
+            bamGrad.addColorStop(1, '#1e293b');   // slate-800 shadow
+            bStrokeColor = '#0f172a';
+            nodeFillColor = '#334155';
+            leafFillColor = '#475569';
+            leafStrokeColor = '#1e293b';
+          } else if (curTheme === 'twilight') {
+            // Neon violet pillars
+            bamGrad.addColorStop(0, '#6366f1');   // indigo-500
+            bamGrad.addColorStop(0.3, '#c7d2fe'); // indigo-200 highlight
+            bamGrad.addColorStop(0.8, '#818cf8'); // indigo-400 highlight
+            bamGrad.addColorStop(1, '#312e81');   // indigo-900 shadow
+            bStrokeColor = '#1e1b4b';
+            nodeFillColor = '#4338ca';
+            leafFillColor = '#a5b4fc';
+            leafStrokeColor = '#4338ca';
+          } else if (curTheme === 'mystic_jungle') {
+            // Ancient mossy stone columns
+            bamGrad.addColorStop(0, '#065f46');   // emerald-800
+            bamGrad.addColorStop(0.3, '#34d399'); // emerald-400 moss highlight
+            bamGrad.addColorStop(0.8, '#047857'); // emerald-700
+            bamGrad.addColorStop(1, '#022c22');   // emerald-950 deep shadow
+            bStrokeColor = '#022c22';
+            nodeFillColor = '#047857';
+            leafFillColor = '#10b981';
+            leafStrokeColor = '#064e3b';
+          } else if (curTheme === 'snow') {
+            // Frosty ice pillars
+            bamGrad.addColorStop(0, '#93c5fd');   // blue-300
+            bamGrad.addColorStop(0.3, '#f0f9ff'); // ice frost highlight
+            bamGrad.addColorStop(0.8, '#bae6fd'); // sky-200
+            bamGrad.addColorStop(1, '#1d4ed8');   // blue-700 deep shadow
+            bStrokeColor = '#1e3a8a';
+            nodeFillColor = '#3b82f6';
+            leafFillColor = '#e0f2fe';
+            leafStrokeColor = '#0284c7';
+          } else if (curTheme === 'sunny_ridges') {
+            // Pine log trunks
+            bamGrad.addColorStop(0, '#b45309');   // amber-700 bark
+            bamGrad.addColorStop(0.3, '#f59e0b'); // amber-500 bark highlight
+            bamGrad.addColorStop(0.8, '#d97706'); // amber-600
+            bamGrad.addColorStop(1, '#78350f');   // amber-900 bark shadow
+            bStrokeColor = '#451a03';
+            nodeFillColor = '#78350f';
+            leafFillColor = '#0d9488';
+            leafStrokeColor = '#115e59';
+          } else if (curTheme === 'retro_bliss') {
+            // Green Mario Pipes
+            bamGrad.addColorStop(0, '#22c55e');   // green-500
+            bamGrad.addColorStop(0.25, '#86efac'); // green-300 highlight
+            bamGrad.addColorStop(0.65, '#22c55e'); // green-500
+            bamGrad.addColorStop(1, '#15803d');   // green-700 shadow
+            bStrokeColor = '#14532d';
+            nodeFillColor = '#166534';
+            leafFillColor = '#4ade80';
+            leafStrokeColor = '#166534';
+          } else if (curTheme === 'sunset_grove') {
+            // Autumn log trunks
+            bamGrad.addColorStop(0, '#ea580c');   // orange-600
+            bamGrad.addColorStop(0.3, '#ffedd5'); // peach orange highlight
+            bamGrad.addColorStop(0.8, '#f97316'); // orange-500
+            bamGrad.addColorStop(1, '#7c2d12');   // orange-900 shadow
+            bStrokeColor = '#431407';
+            nodeFillColor = '#7c2d12';
+            leafFillColor = '#ea580c';
+            leafStrokeColor = '#431407';
+          } else {
+            // Classic Mint Bamboo
+            bamGrad.addColorStop(0, '#34d399');   // sweet emerald mint
+            bamGrad.addColorStop(0.3, '#a7f3d0'); // soft sage green highlight
+            bamGrad.addColorStop(0.8, '#6ee7b7'); // mint highlight
+            bamGrad.addColorStop(1, '#059669');   // deeper green shadow
+            bStrokeColor = '#065f46';
+            nodeFillColor = '#059669';
+            leafFillColor = '#10b981';
+            leafStrokeColor = '#047857';
+          }
         }
+        ctx.strokeStyle = bStrokeColor;
         ctx.lineWidth = 2.5;
 
         // -- Top Bamboo --
@@ -899,7 +1340,7 @@ export default function GameCanvas({
         // Draw ridges/nodes on top bamboo
         let nodeY = topHeight - 55;
         while (nodeY > 0) {
-          ctx.fillStyle = b.hasPowerup === 'heart' ? '#9d174d' : '#059669';
+          ctx.fillStyle = nodeFillColor;
           ctx.fillRect(b.x - 2, nodeY, bWidth + 4, 6);
           ctx.strokeRect(b.x - 2, nodeY, bWidth + 4, 6);
           nodeY -= 70;
@@ -922,7 +1363,7 @@ export default function GameCanvas({
         // Draw ridges on bottom bamboo
         nodeY = bottomHeight + 55;
         while (nodeY < height) {
-          ctx.fillStyle = b.hasPowerup === 'heart' ? '#9d174d' : '#059669';
+          ctx.fillStyle = nodeFillColor;
           ctx.fillRect(b.x - 2, nodeY, bWidth + 4, 6);
           ctx.strokeRect(b.x - 2, nodeY, bWidth + 4, 6);
           nodeY += 70;
@@ -935,9 +1376,9 @@ export default function GameCanvas({
         ctx.fill();
         ctx.stroke();
 
-        // Draw Leaves hanging from bamboos (cute pinkish-tipped sage leaves)
-        ctx.fillStyle = b.hasPowerup === 'heart' ? '#f43f5e' : '#10b981';
-        ctx.strokeStyle = b.hasPowerup === 'heart' ? '#9d174d' : '#047857';
+        // Draw Leaves hanging from bamboos
+        ctx.fillStyle = leafFillColor;
+        ctx.strokeStyle = leafStrokeColor;
         ctx.lineWidth = 1;
 
         // Left leaf sprouting off top opening
@@ -1329,35 +1770,114 @@ export default function GameCanvas({
 
       ctx.restore();
 
-      // F. Draw Ground/Floor (Beautiful Pastel Sweet Pink/White platform)
+      // F. Draw Ground/Floor styled dynamically per theme
       const floorY = height - 50;
-      
-      // Pastel strawberry base
-      ctx.fillStyle = '#ffd6e0';
+      let gBaseColor = '#ffd6e0';
+      let gTopperColor = '#ffccd5';
+      let gBorderColor = '#fb7185';
+      let gDetailColor = '#fb7185';
+      let gDrawSakura = true;
+      let gDrawSnow = false;
+      let gDrawPine = false;
+      let gDrawWeeds = false;
+
+      if (curTheme === 'mystic_jungle') {
+        gBaseColor = '#042f1a';   // deep jungle bedrock
+        gTopperColor = '#064e3b';  // dark green mossy soil
+        gBorderColor = '#10b981';  // bright jade border line
+        gDetailColor = '#059669';  // moss green detail strokes
+        gDrawWeeds = true;
+        gDrawSakura = false;
+      } else if (curTheme === 'tempest' || curTheme === 'twilight') {
+        gBaseColor = '#0f172a';   // dark night slate base
+        gTopperColor = '#1e293b';  // deep violet-slate
+        gBorderColor = '#6366f1';  // twilight neon purple border
+        gDetailColor = '#4f46e5';  // twilight neon purple strokes
+        gDrawWeeds = true;
+        gDrawSakura = false;
+      } else if (curTheme === 'snow') {
+        gBaseColor = '#bae6fd';   // soft azure frosty base
+        gTopperColor = '#f0f9ff';  // pure white snow topper
+        gBorderColor = '#38bdf8';  // cyan outline
+        gDetailColor = '#0ea5e9';  // ice crystal detail strokes
+        gDrawSnow = true;
+        gDrawSakura = false;
+      } else if (curTheme === 'sunny_ridges') {
+        gBaseColor = '#451a03';   // dark pine forest soil
+        gTopperColor = '#15803d';  // evergreen pine forest grass
+        gBorderColor = '#166534';  // rich green boundary line
+        gDetailColor = '#22c55e';  // vibrant green blades
+        gDrawPine = true;
+        gDrawSakura = false;
+      } else if (curTheme === 'retro_bliss') {
+        gBaseColor = '#7c2d12';   // retro brick/clay red-brown base
+        gTopperColor = '#22c55e';  // legendary high-contrast retro grass
+        gBorderColor = '#15803d';  // dark green grass edge
+        gDetailColor = '#16a34a';  // bright grass blades
+        gDrawWeeds = true;
+        gDrawSakura = false;
+      } else if (curTheme === 'sunset_grove') {
+        gBaseColor = '#7c2d12';   // warm dark rust ground
+        gTopperColor = '#ea580c';  // hot sunset orange topper
+        gBorderColor = '#f43f5e';  // raspberry rose line
+        gDetailColor = '#f43f5e';  // autumn rose strokes
+        gDrawSakura = true;
+      } else {
+        // Standard / Sunrise Sanctuary style
+        gBaseColor = '#ffd6e0';
+        gTopperColor = '#ffccd5';
+        gBorderColor = '#fb7185';
+        gDetailColor = '#fb7185';
+        gDrawSakura = true;
+      }
+
+      // Draw Base Bedrock
+      ctx.fillStyle = gBaseColor;
       ctx.fillRect(0, floorY, width, 50);
 
-      // Cream pink horizontal divider topper
-      ctx.fillStyle = '#ffccd5';
+      // Draw Top Soil Layer
+      ctx.fillStyle = gTopperColor;
       ctx.fillRect(0, floorY, width, 14);
 
-      // Elegant rose border line
-      ctx.strokeStyle = '#fb7185';
+      // Draw border separator line
+      ctx.strokeStyle = gBorderColor;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.moveTo(0, floorY + 14);
       ctx.lineTo(width, floorY + 14);
       ctx.stroke();
 
-      // Cute little sakura cherry blossoms or grass clumps on the platform
-      ctx.strokeStyle = '#fb7185';
+      // Draw detail elements scrolling along the ground
+      ctx.strokeStyle = gDetailColor;
       ctx.lineWidth = 1.8;
       for (let gx = s.floorOffset; gx < width + 40; gx += 20) {
-        ctx.beginPath();
-        ctx.moveTo(gx, floorY + 14);
-        ctx.lineTo(gx - 4, floorY + 3);
-        ctx.moveTo(gx + 4, floorY + 14);
-        ctx.lineTo(gx, floorY + 1);
-        ctx.stroke();
+        if (gDrawSakura) {
+          // Tiny sakura flowers/grass clumps
+          ctx.beginPath();
+          ctx.moveTo(gx, floorY + 14);
+          ctx.lineTo(gx - 4, floorY + 3);
+          ctx.moveTo(gx + 4, floorY + 14);
+          ctx.lineTo(gx, floorY + 1);
+          ctx.stroke();
+        } else if (gDrawSnow) {
+          // Draw neat little frosty ice crystals or small snow bumps
+          ctx.beginPath();
+          ctx.moveTo(gx, floorY + 14);
+          ctx.lineTo(gx, floorY + 5);
+          ctx.moveTo(gx - 3, floorY + 10);
+          ctx.lineTo(gx + 3, floorY + 10);
+          ctx.stroke();
+        } else if (gDrawPine || gDrawWeeds) {
+          // Sharp dynamic weed grass tufts
+          ctx.beginPath();
+          ctx.moveTo(gx, floorY + 14);
+          ctx.lineTo(gx - 3, floorY + 2);
+          ctx.moveTo(gx, floorY + 14);
+          ctx.lineTo(gx + 2, floorY + 4);
+          ctx.moveTo(gx - 4, floorY + 14);
+          ctx.lineTo(gx - 6, floorY + 6);
+          ctx.stroke();
+        }
       }
 
       // Restore camera shake translation matrix
@@ -1400,6 +1920,8 @@ export default function GameCanvas({
       const s = stateRef.current;
       if (s.isGameOver) return;
       s.isGameOver = true;
+      s.shakeTimer = 45;
+      s.shakeIntensity = 22;
       setIsGameOverState(true);
       playGameOver();
       const isLevelCleared = gameMode === 'STORY' && activeLevel && s.score >= activeLevel.targetScore;
@@ -1492,6 +2014,42 @@ export default function GameCanvas({
               </span>
             </div>
           )}
+
+          {gameMode === 'ENDLESS' && activeEndlessTheme && (() => {
+            const themeKey = activeEndlessTheme.theme;
+            const badgeClass = {
+              sunrise: 'bg-amber-50/90 border-amber-200/50 text-amber-700',
+              sunset_grove: 'bg-rose-50/90 border-rose-200/50 text-rose-700',
+              snow: 'bg-sky-50/90 border-sky-200/50 text-sky-700',
+              mist: 'bg-slate-100/90 border-slate-300/50 text-slate-700',
+              twilight: 'bg-indigo-950/85 border-indigo-500/30 text-indigo-200',
+              tempest: 'bg-slate-950/85 border-slate-700/40 text-slate-300',
+              mystic_jungle: 'bg-emerald-950/85 border-emerald-500/30 text-emerald-300',
+              sunny_ridges: 'bg-teal-50/90 border-teal-200/50 text-teal-700',
+              retro_bliss: 'bg-blue-50/90 border-blue-200/50 text-blue-700'
+            }[themeKey] || 'bg-rose-50/80 border-rose-100 text-rose-700';
+
+            const iconClass = {
+              sunrise: 'text-amber-500',
+              sunset_grove: 'text-rose-500',
+              snow: 'text-sky-500',
+              mist: 'text-slate-500',
+              twilight: 'text-indigo-400',
+              tempest: 'text-slate-400',
+              mystic_jungle: 'text-emerald-400',
+              sunny_ridges: 'text-teal-500',
+              retro_bliss: 'text-blue-500'
+            }[themeKey] || 'text-rose-500';
+
+            return (
+              <div className={`flex items-center space-x-1.5 mt-1 backdrop-blur-sm border py-0.5 px-2.5 rounded-md shadow-sm transition-all duration-300 ${badgeClass}`}>
+                <Compass className={`w-3 h-3 animate-pulse ${iconClass}`} />
+                <span className="text-[9px] font-black font-mono tracking-wider uppercase">
+                  {activeEndlessTheme.name}
+                </span>
+              </div>
+            );
+          })()}
 
           {/* Active Boost Indicators */}
           <div className="flex flex-col space-y-1">

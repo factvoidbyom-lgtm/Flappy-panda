@@ -1,30 +1,98 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, ShoppingBag, Settings as SettingsIcon, Trophy, Coins, Award, ChevronRight, X, CheckCircle2, Sparkles } from 'lucide-react';
-import { SKIN_LIST, PandaSkin, DailyMission } from '../types';
+import { 
+  Play, 
+  ShoppingBag, 
+  Settings as SettingsIcon, 
+  Trophy, 
+  Coins, 
+  Award, 
+  ChevronRight, 
+  X, 
+  CheckCircle2, 
+  Sparkles, 
+  BarChart3, 
+  Crown, 
+  Lock, 
+  Check, 
+  Compass, 
+  Zap, 
+  Flame, 
+  Skull 
+} from 'lucide-react';
+import { SKIN_LIST, PandaSkin, DailyMission, UserStats } from '../types';
 import PandaAvatar from './PandaAvatar';
 import { playClick } from '../utils/audio';
 
 interface MainMenuProps {
-  equippedSkinId: string;
-  coins: number;
-  highScore: number;
+  stats: UserStats;
   missions: DailyMission[];
   onClaimReward: (missionId: string, rewardCoins: number) => void;
   onNavigate: (screen: 'DIFFICULTY' | 'SHOP' | 'SETTINGS' | 'GAME' | 'STORY_LEVELS') => void;
   onStartDirectly?: () => void;
 }
 
+const ACHIEVEMENTS = [
+  {
+    id: 'first_run',
+    title: 'First Flight 🪶',
+    description: 'Play your first game run.',
+    check: (stats: UserStats) => stats.gamesPlayed > 0,
+    reward: '15 Coins',
+    icon: Play
+  },
+  {
+    id: 'coin_hoarder',
+    title: 'Coin Gatherer 🪙',
+    description: 'Accumulate 100 total collected coins.',
+    check: (stats: UserStats) => stats.totalCoinsCollected >= 100,
+    reward: '50 Coins',
+    icon: Coins
+  },
+  {
+    id: 'skin_collector',
+    title: 'Panda Wardrobe 👕',
+    description: 'Unlock 3 or more panda skins.',
+    check: (stats: UserStats) => stats.unlockedSkins.length >= 3,
+    reward: '100 Coins',
+    icon: ShoppingBag
+  },
+  {
+    id: 'story_master',
+    title: 'Zen Master 🌸',
+    description: 'Reach Level 5 of Story Mode.',
+    check: (stats: UserStats) => (stats.storyLevelProgress || 1) >= 5,
+    reward: '150 Coins',
+    icon: Crown
+  },
+  {
+    id: 'high_scorer',
+    title: 'Flappy Pro 🚀',
+    description: 'Score 20+ points in Medium Mode.',
+    check: (stats: UserStats) => stats.highScore.MEDIUM >= 20 || stats.highScore.HARD >= 15 || stats.highScore.INSANE >= 10,
+    reward: '200 Coins',
+    icon: Trophy
+  },
+  {
+    id: 'insane_legend',
+    title: 'Insane Legend ☠️',
+    description: 'Score 5+ points in Insane Mode.',
+    check: (stats: UserStats) => stats.highScore.INSANE >= 5,
+    reward: '500 Coins',
+    icon: Sparkles
+  }
+];
+
 export default function MainMenu({ 
-  equippedSkinId, 
-  coins, 
-  highScore, 
+  stats, 
   missions = [], 
   onClaimReward, 
   onNavigate 
 }: MainMenuProps) {
-  const currentSkin = SKIN_LIST.find((s) => s.id === equippedSkinId) || SKIN_LIST[0];
+  const currentSkin = SKIN_LIST.find((s) => s.id === stats.equippedSkin) || SKIN_LIST[0];
   const [isMissionsOpen, setIsMissionsOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
 
   const handleNav = (screen: 'DIFFICULTY' | 'SHOP' | 'SETTINGS' | 'STORY_LEVELS') => {
     playClick();
@@ -33,6 +101,14 @@ export default function MainMenu({
 
   const completedCount = missions.filter((m) => m.completed).length;
   const completedAndUnclaimedCount = missions.filter((m) => m.completed && !m.claimed).length;
+
+  // Compute stats metrics
+  const activeHighScore = Math.max(
+    stats.highScore.EASY || 0,
+    stats.highScore.MEDIUM || 0,
+    stats.highScore.HARD || 0,
+    stats.highScore.INSANE || 0
+  );
 
   return (
     <div 
@@ -51,13 +127,13 @@ export default function MainMenu({
         {/* High Score Badge */}
         <div className="flex items-center space-x-2 bg-white/70 backdrop-blur-md py-1.5 px-3.5 rounded-full border border-rose-200/55 shadow-md">
           <Trophy className="w-3.5 h-3.5 text-rose-500 fill-rose-500/10" />
-          <span className="text-[10px] font-mono tracking-widest font-bold text-rose-800">BEST: {highScore}</span>
+          <span className="text-[10px] font-mono tracking-widest font-bold text-rose-800">BEST: {activeHighScore}</span>
         </div>
 
         {/* Coins Counter */}
         <div className="flex items-center space-x-1.5 bg-white/70 backdrop-blur-md py-1.5 px-4 rounded-full border border-rose-200/55 shadow-md">
           <Coins className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500/15 animate-spin" style={{ animationDuration: '6s' }} />
-          <span className="text-xs font-mono font-bold text-rose-900">{coins}</span>
+          <span className="text-xs font-mono font-bold text-rose-900">{stats.coins}</span>
         </div>
       </div>
 
@@ -164,14 +240,14 @@ export default function MainMenu({
           <span>PLAY GAME</span>
         </motion.button>
 
-        {/* Secondary buttons row */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Secondary buttons grid: 2x2 layout */}
+        <div className="grid grid-cols-2 gap-2.5">
           {/* Shop */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleNav('SHOP')}
-            className="flex items-center justify-center space-x-2 py-3 bg-white/70 hover:bg-white/90 active:bg-rose-50 backdrop-blur-md text-rose-800 rounded-xl font-bold text-[10px] tracking-wider uppercase border border-rose-200/60 shadow-md cursor-pointer"
+            className="flex items-center justify-center space-x-2 py-3 bg-white/70 hover:bg-white/95 active:bg-rose-50 backdrop-blur-md text-rose-800 rounded-xl font-bold text-[10px] tracking-wider uppercase border border-rose-200/60 shadow-md cursor-pointer"
           >
             <ShoppingBag className="w-3.5 h-3.5 text-rose-500" />
             <span>PANDA SHOP</span>
@@ -182,10 +258,32 @@ export default function MainMenu({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleNav('SETTINGS')}
-            className="flex items-center justify-center space-x-2 py-3 bg-white/70 hover:bg-white/90 active:bg-rose-50 backdrop-blur-md text-rose-800 rounded-xl font-bold text-[10px] tracking-wider uppercase border border-rose-200/60 shadow-md cursor-pointer"
+            className="flex items-center justify-center space-x-2 py-3 bg-white/70 hover:bg-white/95 active:bg-rose-50 backdrop-blur-md text-rose-800 rounded-xl font-bold text-[10px] tracking-wider uppercase border border-rose-200/60 shadow-md cursor-pointer"
           >
             <SettingsIcon className="w-3.5 h-3.5 text-rose-500" />
             <span>SETTINGS</span>
+          </motion.button>
+
+          {/* Statistics */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => { playClick(); setIsStatsOpen(true); }}
+            className="flex items-center justify-center space-x-2 py-3 bg-white/70 hover:bg-white/95 active:bg-rose-50 backdrop-blur-md text-rose-800 rounded-xl font-bold text-[10px] tracking-wider uppercase border border-rose-200/60 shadow-md cursor-pointer"
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-rose-500" />
+            <span>STATISTICS</span>
+          </motion.button>
+
+          {/* Achievements */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => { playClick(); setIsAchievementsOpen(true); }}
+            className="flex items-center justify-center space-x-2 py-3 bg-white/70 hover:bg-white/95 active:bg-rose-50 backdrop-blur-md text-rose-800 rounded-xl font-bold text-[10px] tracking-wider uppercase border border-rose-200/60 shadow-md cursor-pointer"
+          >
+            <Trophy className="w-3.5 h-3.5 text-rose-500" />
+            <span>ACHIEVEMENTS</span>
           </motion.button>
         </div>
       </div>
@@ -218,10 +316,7 @@ export default function MainMenu({
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
               className="absolute bottom-0 left-0 right-0 max-h-[85%] bg-white border-t border-rose-100 rounded-t-[32px] p-6 pb-8 z-50 flex flex-col space-y-4 shadow-[0_-15px_40px_rgba(251,113,133,0.1)] backdrop-blur-xl"
             >
-              {/* Inner bezel border accent */}
               <div className="absolute inset-0 rounded-t-[32px] border-t border-x border-rose-50 pointer-events-none" />
-
-              {/* Drawer Handle Accent */}
               <div className="w-10 h-1 bg-rose-200 rounded-full mx-auto" />
 
               {/* Header */}
@@ -254,7 +349,6 @@ export default function MainMenu({
                           : 'bg-white border-rose-100/80 text-rose-900 shadow-sm'
                       }`}
                     >
-                      {/* Claimed/Completed watermarks or highlights */}
                       {mission.completed && !mission.claimed && (
                         <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
                       )}
@@ -281,16 +375,13 @@ export default function MainMenu({
 
                       {/* Progress bar and claiming action */}
                       <div className="flex items-center justify-between gap-4">
-                        {/* Progress slider */}
                         <div className="flex-grow space-y-1">
                           <div className="flex justify-between text-[9px] font-mono font-bold text-rose-400 tracking-wider">
                             <span>PROGRESS</span>
                             <span>{mission.progress} / {mission.target}</span>
                           </div>
                           
-                          {/* Outer Track */}
                           <div className="w-full h-1.5 bg-rose-100/50 rounded-full overflow-hidden border border-rose-100/20">
-                            {/* Fill */}
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${percent}%` }}
@@ -304,7 +395,6 @@ export default function MainMenu({
                           </div>
                         </div>
 
-                        {/* Button Action */}
                         <div className="shrink-0">
                           {mission.claimed ? (
                             <div className="flex items-center space-x-1 py-1.5 px-2.5 text-rose-400/60 font-mono font-bold text-[9px] tracking-wider uppercase">
@@ -326,6 +416,197 @@ export default function MainMenu({
                             </div>
                           )}
                         </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* STATISTICS MODAL OVERLAY */}
+      <AnimatePresence>
+        {isStatsOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsStatsOpen(false)}
+              className="absolute inset-0 bg-rose-950/25 backdrop-blur-sm z-40 cursor-pointer"
+            />
+
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="absolute bottom-0 left-0 right-0 max-h-[85%] bg-white border-t border-rose-100 rounded-t-[32px] p-6 pb-8 z-50 flex flex-col space-y-4 shadow-[0_-15px_40px_rgba(251,113,133,0.1)] backdrop-blur-xl text-rose-950"
+            >
+              <div className="absolute inset-0 rounded-t-[32px] border-t border-x border-rose-50 pointer-events-none" />
+              <div className="w-10 h-1 bg-rose-200 rounded-full mx-auto animate-pulse" />
+
+              <div className="flex items-center justify-between w-full">
+                <div className="text-left space-y-0.5">
+                  <h2 className="text-base font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-rose-800 to-rose-600 uppercase">PANDA STATISTICS</h2>
+                  <p className="text-[9px] text-rose-400 uppercase tracking-widest font-mono font-bold">Lifetime metrics & achievements</p>
+                </div>
+                <button
+                  onClick={() => { playClick(); setIsStatsOpen(false); }}
+                  className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-400 hover:text-rose-600 rounded-full border border-rose-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Statistics Grid */}
+              <div className="flex flex-col space-y-4 overflow-y-auto pr-1 max-h-[380px]">
+                {/* Highlights boxes */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-rose-50/50 border border-rose-100/50 p-3.5 rounded-2xl flex flex-col items-center justify-center text-center">
+                    <Play className="w-5 h-5 text-rose-500 mb-1" />
+                    <span className="text-2xl font-black font-mono text-rose-900">{stats.gamesPlayed || 0}</span>
+                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider font-mono">Runs Played</span>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-100/50 p-3.5 rounded-2xl flex flex-col items-center justify-center text-center">
+                    <Coins className="w-5 h-5 text-amber-500 mb-1" />
+                    <span className="text-2xl font-black font-mono text-rose-900">{stats.totalCoinsCollected || 0}</span>
+                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider font-mono">Coins Collected</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-rose-50/50 border border-rose-100/50 p-3.5 rounded-2xl flex flex-col items-center justify-center text-center">
+                    <ShoppingBag className="w-5 h-5 text-emerald-500 mb-1" />
+                    <span className="text-2xl font-black font-mono text-rose-900">{stats.unlockedSkins?.length || 1}</span>
+                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider font-mono">Skins Unlocked</span>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-100/50 p-3.5 rounded-2xl flex flex-col items-center justify-center text-center">
+                    <Crown className="w-5 h-5 text-indigo-500 mb-1" />
+                    <span className="text-2xl font-black font-mono text-rose-900">{(stats.storyLevelProgress || 1) - 1}/5</span>
+                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider font-mono">Levels Cleared</span>
+                  </div>
+                </div>
+
+                {/* High Scores Listing */}
+                <div className="bg-white border border-rose-100 rounded-2xl p-4 space-y-3">
+                  <h3 className="text-xs font-extrabold text-rose-950 tracking-wider uppercase border-b border-rose-50 pb-2 flex items-center space-x-1.5">
+                    <Trophy className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Mode High Scores</span>
+                  </h3>
+                  
+                  <div className="space-y-2.5 font-mono text-xs">
+                    <div className="flex justify-between items-center bg-emerald-500/[0.04] p-2 rounded-xl border border-emerald-100/20">
+                      <span className="font-extrabold text-emerald-700 flex items-center gap-1.5">🌿 EASY MODE</span>
+                      <span className="font-black text-rose-950">{stats.highScore.EASY || 0} PTS</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-amber-500/[0.04] p-2 rounded-xl border border-amber-100/20">
+                      <span className="font-extrabold text-amber-700 flex items-center gap-1.5">🍃 MEDIUM MODE</span>
+                      <span className="font-black text-rose-950">{stats.highScore.MEDIUM || 0} PTS</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-rose-500/[0.04] p-2 rounded-xl border border-rose-100/20">
+                      <span className="font-extrabold text-rose-700 flex items-center gap-1.5">🔥 HARD MODE</span>
+                      <span className="font-black text-rose-950">{stats.highScore.HARD || 0} PTS</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-red-500/[0.04] p-2 rounded-xl border border-red-100/20">
+                      <span className="font-extrabold text-red-700 flex items-center gap-1.5">☠️ INSANE MODE</span>
+                      <span className="font-black text-rose-950">{stats.highScore.INSANE || 0} PTS</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ACHIEVEMENTS MODAL OVERLAY */}
+      <AnimatePresence>
+        {isAchievementsOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAchievementsOpen(false)}
+              className="absolute inset-0 bg-rose-950/25 backdrop-blur-sm z-40 cursor-pointer"
+            />
+
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="absolute bottom-0 left-0 right-0 max-h-[85%] bg-white border-t border-rose-100 rounded-t-[32px] p-6 pb-8 z-50 flex flex-col space-y-4 shadow-[0_-15px_40px_rgba(251,113,133,0.1)] backdrop-blur-xl text-rose-950"
+            >
+              <div className="absolute inset-0 rounded-t-[32px] border-t border-x border-rose-50 pointer-events-none" />
+              <div className="w-10 h-1 bg-rose-200 rounded-full mx-auto" />
+
+              <div className="flex items-center justify-between w-full">
+                <div className="text-left space-y-0.5">
+                  <h2 className="text-base font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-rose-800 to-rose-600 uppercase">PANDA MEDALS</h2>
+                  <p className="text-[9px] text-rose-400 uppercase tracking-widest font-mono font-bold">Earn badges & glory</p>
+                </div>
+                <button
+                  onClick={() => { playClick(); setIsAchievementsOpen(false); }}
+                  className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-400 hover:text-rose-600 rounded-full border border-rose-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Achievements list */}
+              <div className="flex flex-col space-y-3.5 overflow-y-auto pr-1 max-h-[380px]">
+                {ACHIEVEMENTS.map((ach) => {
+                  const isUnlocked = ach.check(stats);
+                  const Icon = ach.icon;
+
+                  return (
+                    <div
+                      key={ach.id}
+                      className={`relative overflow-hidden p-3 rounded-2xl border flex items-center justify-between gap-4 transition-all ${
+                        isUnlocked 
+                          ? 'bg-amber-500/[0.03] border-amber-200 text-rose-900 shadow-sm'
+                          : 'bg-slate-50/50 border-rose-100/60 opacity-70 text-rose-900/60'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3.5 text-left">
+                        {/* Achievement Badge Icon Box */}
+                        <div className={`p-2.5 rounded-xl border shrink-0 flex items-center justify-center ${
+                          isUnlocked 
+                            ? 'bg-amber-500/10 border-amber-300 text-amber-600 shadow-sm' 
+                            : 'bg-slate-100 border-slate-200 text-slate-400'
+                        }`}>
+                          <Icon className="w-4.5 h-4.5" />
+                        </div>
+
+                        {/* Title & description */}
+                        <div className="space-y-0.5">
+                          <h4 className="text-xs font-extrabold text-rose-950 tracking-wide flex items-center space-x-1.5">
+                            <span>{ach.title}</span>
+                            {isUnlocked && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                          </h4>
+                          <p className="text-[10px] text-rose-500/80 font-bold leading-relaxed pr-2">
+                            {ach.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Lock/Unlock indicators */}
+                      <div className="shrink-0">
+                        {isUnlocked ? (
+                          <div className="flex items-center space-x-1 bg-amber-500/15 text-amber-700 px-2.5 py-1 rounded-xl font-mono font-black text-[9px] tracking-widest uppercase border border-amber-300/20">
+                            <Check className="w-3 h-3 text-amber-600 stroke-[3px]" />
+                            <span>UNLOCKED</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-1 bg-slate-100 text-slate-400 px-2.5 py-1 rounded-xl font-mono font-bold text-[9px] tracking-widest uppercase border border-slate-200">
+                            <Lock className="w-3 h-3 text-slate-400" />
+                            <span>LOCKED</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

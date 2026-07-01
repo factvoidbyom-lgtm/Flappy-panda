@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { ArrowLeft, Zap, Flame, Compass } from 'lucide-react';
+import { ArrowLeft, Zap, Flame, Compass, Skull } from 'lucide-react';
 import { Difficulty } from '../types';
 import { playClick } from '../utils/audio';
 
@@ -12,7 +12,7 @@ export default function DifficultySelect({ onSelect, onBack }: DifficultySelectP
   const options = [
     {
       id: 'EASY' as Difficulty,
-      title: 'Easy Mode',
+      title: 'Easy Mode 🌿',
       desc: 'Slower bamboo, wider gaps. Perfect for warm-ups.',
       icon: Compass,
       color: 'from-emerald-500/15 to-emerald-400/5',
@@ -22,7 +22,7 @@ export default function DifficultySelect({ onSelect, onBack }: DifficultySelectP
     },
     {
       id: 'MEDIUM' as Difficulty,
-      title: 'Medium Mode',
+      title: 'Medium Mode 🍃',
       desc: 'Balanced speed and challenge. The classic flap.',
       icon: Zap,
       color: 'from-amber-500/15 to-amber-400/5',
@@ -32,13 +32,23 @@ export default function DifficultySelect({ onSelect, onBack }: DifficultySelectP
     },
     {
       id: 'HARD' as Difficulty,
-      title: 'Hard Mode',
+      title: 'Hard Mode 🔥',
       desc: 'Fast forest, tight gaps. Only for panda pros.',
       icon: Flame,
       color: 'from-rose-500/15 to-rose-400/5',
       iconColor: 'text-rose-600',
       text: 'text-rose-950',
       bg: 'bg-white/80 hover:bg-white border-rose-100 hover:border-rose-300 hover:shadow-[0_6px_20px_rgba(244,63,94,0.12)]'
+    },
+    {
+      id: 'INSANE' as Difficulty,
+      title: 'Insane Mode ☠️',
+      desc: 'Hyperspeed bamboo, razor-thin gaps. Extreme reflexes!',
+      icon: Skull,
+      color: 'from-red-950/20 to-red-900/5',
+      iconColor: 'text-red-700',
+      text: 'text-red-950 font-black',
+      bg: 'bg-red-50/70 hover:bg-red-50 border-red-200 hover:border-red-500 hover:shadow-[0_6px_20px_rgba(185,28,28,0.18)]'
     }
   ];
 

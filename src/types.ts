@@ -1,6 +1,6 @@
-export type GameScreen = 'LOADING' | 'MENU' | 'DIFFICULTY' | 'GAME' | 'SHOP' | 'SETTINGS' | 'STORY_LEVELS';
+export type GameScreen = 'LOADING' | 'MENU' | 'DIFFICULTY' | 'GAME' | 'SHOP' | 'SETTINGS' | 'STORY_LEVELS' | 'PRE_GAME_LOADING';
 
-export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
+export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD' | 'INSANE';
 
 export type GameMode = 'ENDLESS' | 'STORY';
 
@@ -23,6 +23,7 @@ export interface UserStats {
     EASY: number;
     MEDIUM: number;
     HARD: number;
+    INSANE: number;
   };
   coins: number;
   unlockedSkins: string[]; // skin IDs
@@ -104,6 +105,13 @@ export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
     spawnRate: 75,
     gravity: 0.50,
     jumpForce: -9.0
+  },
+  INSANE: {
+    speed: 5.3,
+    gapSize: 108,
+    spawnRate: 64,
+    gravity: 0.58,
+    jumpForce: -10.0
   }
 };
 

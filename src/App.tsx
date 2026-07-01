@@ -8,6 +8,7 @@ import GameCanvas from './components/GameCanvas';
 import Shop from './components/Shop';
 import Settings from './components/Settings';
 import StoryLevelsSelect from './components/StoryLevelsSelect';
+import PreGameLoading from './components/PreGameLoading';
 import { 
   loadAudioSettings, 
   setSoundEnabled, 
@@ -21,7 +22,8 @@ const DEFAULT_STATS: UserStats = {
   highScore: {
     EASY: 0,
     MEDIUM: 0,
-    HARD: 0
+    HARD: 0,
+    INSANE: 0
   },
   coins: 0,
   unlockedSkins: ['classic'],
@@ -281,9 +283,7 @@ export default function App() {
       case 'MENU':
         return (
           <MainMenu
-            equippedSkinId={stats.equippedSkin}
-            coins={stats.coins}
-            highScore={stats.highScore[difficulty]}
+            stats={stats}
             missions={missions}
             onClaimReward={handleClaimReward}
             onNavigate={(next) => {
@@ -313,7 +313,7 @@ export default function App() {
                 setGameMode('STORY');
                 setSelectedLevelId(levelId);
                 setDifficulty(lvl.difficulty);
-                setScreen('GAME');
+                setScreen('PRE_GAME_LOADING');
               }
             }}
           />
@@ -324,9 +324,17 @@ export default function App() {
             onSelect={(selectedDifficulty) => {
               setGameMode('ENDLESS');
               setDifficulty(selectedDifficulty);
-              setScreen('GAME');
+              setScreen('PRE_GAME_LOADING');
             }}
             onBack={() => setScreen('MENU')}
+          />
+        );
+      case 'PRE_GAME_LOADING':
+        return (
+          <PreGameLoading
+            difficulty={difficulty}
+            equippedSkinId={stats.equippedSkin}
+            onComplete={() => setScreen('GAME')}
           />
         );
       case 'GAME':
