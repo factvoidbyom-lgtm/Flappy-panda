@@ -1,4 +1,4 @@
-export type GameScreen = 'LOADING' | 'MENU' | 'DIFFICULTY' | 'GAME' | 'SHOP' | 'SETTINGS' | 'STORY_LEVELS' | 'PRE_GAME_LOADING';
+export type GameScreen = 'LOADING' | 'MENU' | 'DIFFICULTY' | 'GAME' | 'SHOP' | 'SETTINGS' | 'STORY_LEVELS' | 'PRE_GAME_LOADING' | 'LUCKY_SPIN' | 'DAILY_REWARDS' | 'SKILL_TREE';
 
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD' | 'INSANE';
 
@@ -45,6 +45,7 @@ export interface UserStats {
   skillsUnlocked: string[]; // skill IDs: 'shield_duration' | 'magnet_range' | 'near_miss_xp' | 'extra_multiplier'
   lastDailyRewardCollected?: string; // date string (YYYY-MM-DD)
   luckySpinsRemaining: number;
+  nextSpinAvailableAt?: number; // timestamp in milliseconds
   totalPlayTime: number; // in seconds
   bossesDefeated: number;
   missionsCompleted: number;

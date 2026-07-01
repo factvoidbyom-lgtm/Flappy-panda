@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 
 interface PandaAvatarProps {
-  skinType: 'classic' | 'red' | 'astro' | 'ninja' | 'golden';
+  skinType: 'classic' | 'red' | 'sakura' | 'astro' | 'frosty' | 'sprite' | 'ninja' | 'ghost' | 'cyber' | 'storm' | 'golden' | 'chrono' | 'emperor';
   size?: number;
   className?: string;
   isFlying?: boolean;
@@ -19,6 +19,14 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
           cheek: '#ea580c',
           eye: '#3c0d02'
         };
+      case 'sakura':
+        return {
+          main: '#fff5f6',
+          dark: '#f43f5e',
+          light: '#ffe4e6',
+          cheek: '#fda4af',
+          eye: '#9f1239'
+        };
       case 'astro':
         return {
           main: '#f8fafc', // futuristic white
@@ -26,6 +34,22 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
           light: '#e2e8f0', // cool light gray
           cheek: '#fda4af',
           eye: '#0f172a'
+        };
+      case 'frosty':
+        return {
+          main: '#f0f9ff',
+          dark: '#0369a1',
+          light: '#e0f2fe',
+          cheek: '#7dd3fc',
+          eye: '#0c4a6e'
+        };
+      case 'sprite':
+        return {
+          main: '#ecfdf5',
+          dark: '#047857',
+          light: '#d1fae5',
+          cheek: '#6ee7b7',
+          eye: '#064e3b'
         };
       case 'ninja':
         return {
@@ -35,6 +59,30 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
           cheek: '#f1f5f9',
           eye: '#0f172a'
         };
+      case 'ghost':
+        return {
+          main: '#faf5ff',
+          dark: '#6b21a8',
+          light: '#f3e8ff',
+          cheek: '#d8b4fe',
+          eye: '#581c87'
+        };
+      case 'cyber':
+        return {
+          main: '#ecfeff',
+          dark: '#0e7490',
+          light: '#cffafe',
+          cheek: '#67e8f9',
+          eye: '#164e63'
+        };
+      case 'storm':
+        return {
+          main: '#fefbeb',
+          dark: '#a16207',
+          light: '#fef08a',
+          cheek: '#fde047',
+          eye: '#713f12'
+        };
       case 'golden':
         return {
           main: '#fef08a', // vibrant pale gold
@@ -42,6 +90,22 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
           light: '#fde047', // bright yellow gold
           cheek: '#f59e0b',
           eye: '#78350f'
+        };
+      case 'chrono':
+        return {
+          main: '#fdf2f8',
+          dark: '#be185d',
+          light: '#fbcfe8',
+          cheek: '#f472b6',
+          eye: '#831843'
+        };
+      case 'emperor':
+        return {
+          main: '#fef2f2',
+          dark: '#b91c1c',
+          light: '#fee2e2',
+          cheek: '#fca5a5',
+          eye: '#7f1d1d'
         };
       case 'classic':
       default:

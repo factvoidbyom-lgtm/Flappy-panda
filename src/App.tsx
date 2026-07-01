@@ -9,6 +9,9 @@ import Shop from './components/Shop';
 import Settings from './components/Settings';
 import StoryLevelsSelect from './components/StoryLevelsSelect';
 import PreGameLoading from './components/PreGameLoading';
+import LuckySpin from './components/LuckySpin';
+import DailyRewards from './components/DailyRewards';
+import SkillTree from './components/SkillTree';
 import { 
   loadAudioSettings, 
   setSoundEnabled, 
@@ -36,6 +39,7 @@ const DEFAULT_STATS: UserStats = {
   characterLevels: { classic: 1 },
   skillsUnlocked: [],
   luckySpinsRemaining: 1,
+  nextSpinAvailableAt: 0,
   totalPlayTime: 0,
   bossesDefeated: 0,
   missionsCompleted: 0,
@@ -81,19 +85,44 @@ export default function App() {
     // User Stats
     try {
       const storedStats = localStorage.getItem('panda_user_stats');
+      const todayStr = getTodayDateString();
       if (storedStats) {
         const parsed = JSON.parse(storedStats);
-        // Ensure forward compatibility if stats fields change
-        setStats({
+        
+        // Daily lucky spin tickets reset/restoration on calendar day change or exact 24h timer expiration
+        let spinsRemaining = parsed.luckySpinsRemaining !== undefined ? parsed.luckySpinsRemaining : 1;
+        let nextSpinAt = parsed.nextSpinAvailableAt || 0;
+        
+        if (spinsRemaining === 0 && nextSpinAt && Date.now() >= nextSpinAt) {
+          spinsRemaining = 1;
+          nextSpinAt = 0;
+        }
+
+        const storedSpinsDate = localStorage.getItem('panda_last_spin_reset_date');
+        const todayStr = getTodayDateString();
+        if (storedSpinsDate !== todayStr && spinsRemaining === 0) {
+          spinsRemaining = 1;
+          nextSpinAt = 0;
+          localStorage.setItem('panda_last_spin_reset_date', todayStr);
+        }
+
+        const updatedStats = {
           ...DEFAULT_STATS,
           ...parsed,
+          luckySpinsRemaining: spinsRemaining,
+          nextSpinAvailableAt: nextSpinAt,
           highScore: {
             ...DEFAULT_STATS.highScore,
             ...parsed.highScore
           }
-        });
+        };
+
+        setStats(updatedStats);
+        // Persist updated spin statuses back
+        localStorage.setItem('panda_user_stats', JSON.stringify(updatedStats));
       } else {
         localStorage.setItem('panda_user_stats', JSON.stringify(DEFAULT_STATS));
+        localStorage.setItem('panda_last_spin_reset_date', todayStr);
       }
     } catch (e) {
       console.error('Failed to load user stats from localStorage:', e);
@@ -267,13 +296,40 @@ export default function App() {
       }
     }
 
+    // XP calculation: 10 XP per point, 2 XP per coin, 100 XP per story level clear
+    const scoreXp = finalScore * 10;
+    const coinsXp = coinsEarned * 2;
+    const levelClearXp = (gameMode === 'STORY' && isLevelCleared) ? 100 : 0;
+    const earnedXp = scoreXp + coinsXp + levelClearXp;
+
+    let updatedXp = (stats.xp || 0) + earnedXp;
+    let updatedLevel = stats.playerLevel || 1;
+    
+    // Formula: level * 200 XP needed to level up
+    while (updatedXp >= updatedLevel * 200) {
+      updatedXp -= updatedLevel * 200;
+      updatedLevel += 1;
+    }
+
+    // Update character level slightly with game play (chance to level up on run completion)
+    const charLevels = { ...(stats.characterLevels || {}) };
+    const currentSkinId = stats.equippedSkin || 'classic';
+    const currentSkinLvl = charLevels[currentSkinId] || 1;
+    if (Math.random() < 0.25 && currentSkinLvl < 10) {
+      charLevels[currentSkinId] = currentSkinLvl + 1;
+    }
+
     const updated = {
       ...stats,
       highScore: newHighScores,
       coins: stats.coins + coinsEarned,
       totalCoinsCollected: stats.totalCoinsCollected + coinsEarned,
       gamesPlayed: stats.gamesPlayed + 1,
-      storyLevelProgress: nextProgress
+      storyLevelProgress: nextProgress,
+      xp: updatedXp,
+      playerLevel: updatedLevel,
+      characterLevels: charLevels,
+      bossesDefeated: (stats.bossesDefeated || 0) + (finalScore >= 15 ? 1 : 0)
     };
 
     saveStats(updated);
@@ -389,6 +445,89 @@ export default function App() {
             onUpdateSettings={handleUpdateSettings}
             onResetProgress={handleResetProgress}
             onBack={() => setScreen('MENU')}
+          />
+        );
+      case 'LUCKY_SPIN':
+        return (
+          <LuckySpin
+            coins={stats.coins}
+            unlockedSkins={stats.unlockedSkins}
+            luckySpinsRemaining={stats.luckySpinsRemaining || 0}
+            nextSpinAvailableAt={stats.nextSpinAvailableAt || 0}
+            onBack={() => setScreen('MENU')}
+            onWinCoins={(amount) => {
+              const updated = {
+                ...stats,
+                coins: stats.coins + amount,
+                totalCoinsCollected: stats.totalCoinsCollected + amount
+              };
+              saveStats(updated);
+            }}
+            onWinSkin={(skinId) => {
+              const updated = {
+                ...stats,
+                unlockedSkins: [...stats.unlockedSkins, skinId]
+              };
+              saveStats(updated);
+            }}
+            onDeductSpin={() => {
+              const nextSpins = Math.max(0, (stats.luckySpinsRemaining || 1) - 1);
+              const updated = {
+                ...stats,
+                luckySpinsRemaining: nextSpins,
+                nextSpinAvailableAt: nextSpins === 0 ? Date.now() + 24 * 60 * 60 * 1000 : stats.nextSpinAvailableAt
+              };
+              saveStats(updated);
+            }}
+            onAwardFreeSpin={() => {
+              const updated = {
+                ...stats,
+                luckySpinsRemaining: (stats.luckySpinsRemaining || 0) + 1,
+                nextSpinAvailableAt: 0
+              };
+              saveStats(updated);
+            }}
+          />
+        );
+      case 'DAILY_REWARDS':
+        return (
+          <DailyRewards
+            coins={stats.coins}
+            unlockedSkins={stats.unlockedSkins}
+            lastDailyRewardCollected={stats.lastDailyRewardCollected}
+            onBack={() => setScreen('MENU')}
+            onClaimReward={(rewardCoins, awardSkinId, isSpinReward) => {
+              const todayStr = getTodayDateString();
+              const updated = {
+                ...stats,
+                coins: stats.coins + rewardCoins,
+                totalCoinsCollected: stats.totalCoinsCollected + rewardCoins,
+                lastDailyRewardCollected: todayStr
+              };
+              if (awardSkinId) {
+                updated.unlockedSkins = [...updated.unlockedSkins, awardSkinId];
+              }
+              if (isSpinReward) {
+                updated.luckySpinsRemaining = (updated.luckySpinsRemaining || 0) + 1;
+              }
+              saveStats(updated);
+            }}
+          />
+        );
+      case 'SKILL_TREE':
+        return (
+          <SkillTree
+            coins={stats.coins}
+            skillsUnlocked={stats.skillsUnlocked || []}
+            onBack={() => setScreen('MENU')}
+            onUnlockSkill={(skillId, cost) => {
+              const updated = {
+                ...stats,
+                coins: stats.coins - cost,
+                skillsUnlocked: [...(stats.skillsUnlocked || []), skillId]
+              };
+              saveStats(updated);
+            }}
           />
         );
       default:

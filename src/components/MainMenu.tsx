@@ -18,9 +18,11 @@ import {
   Compass, 
   Zap, 
   Flame, 
-  Skull 
+  Skull,
+  Gift,
+  RefreshCw
 } from 'lucide-react';
-import { SKIN_LIST, PandaSkin, DailyMission, UserStats } from '../types';
+import { SKIN_LIST, PandaSkin, DailyMission, UserStats, GameScreen } from '../types';
 import PandaAvatar from './PandaAvatar';
 import { playClick } from '../utils/audio';
 
@@ -28,7 +30,7 @@ interface MainMenuProps {
   stats: UserStats;
   missions: DailyMission[];
   onClaimReward: (missionId: string, rewardCoins: number) => void;
-  onNavigate: (screen: 'DIFFICULTY' | 'SHOP' | 'SETTINGS' | 'GAME' | 'STORY_LEVELS') => void;
+  onNavigate: (screen: GameScreen) => void;
   onStartDirectly?: () => void;
 }
 
@@ -94,7 +96,7 @@ export default function MainMenu({
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
 
-  const handleNav = (screen: 'DIFFICULTY' | 'SHOP' | 'SETTINGS' | 'STORY_LEVELS') => {
+  const handleNav = (screen: GameScreen) => {
     playClick();
     onNavigate(screen);
   };
@@ -134,6 +136,25 @@ export default function MainMenu({
         <div className="flex items-center space-x-1.5 bg-white/70 backdrop-blur-md py-1.5 px-4 rounded-full border border-rose-200/55 shadow-md">
           <Coins className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500/15 animate-spin" style={{ animationDuration: '6s' }} />
           <span className="text-xs font-mono font-bold text-rose-900">{stats.coins}</span>
+        </div>
+      </div>
+
+      {/* Player Level and XP Progress Meter */}
+      <div className="w-full bg-white/60 border border-rose-200/40 p-2.5 rounded-2xl flex flex-col space-y-1 z-10 shadow-sm mt-3 shrink-0">
+        <div className="flex justify-between items-center px-1">
+          <span className="text-[10px] font-black text-rose-950 uppercase tracking-wider flex items-center gap-1">
+            <Crown className="w-3 h-3 text-amber-500 fill-amber-500/10" />
+            <span>PLAYER LEVEL {stats.playerLevel || 1}</span>
+          </span>
+          <span className="text-[9px] font-mono font-extrabold text-rose-500 uppercase tracking-widest">
+            {stats.xp || 0} / {(stats.playerLevel || 1) * 200} XP
+          </span>
+        </div>
+        <div className="w-full h-2 bg-rose-100 rounded-full overflow-hidden border border-rose-100/20">
+          <div 
+            className="h-full bg-gradient-to-r from-rose-500 via-pink-400 to-rose-300 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(244,63,94,0.2)]"
+            style={{ width: `${Math.min(100, Math.round(((stats.xp || 0) / ((stats.playerLevel || 1) * 200)) * 100))}%` }}
+          />
         </div>
       </div>
 
@@ -215,6 +236,48 @@ export default function MainMenu({
             <ChevronRight className="w-3.5 h-3.5 text-rose-400/60" />
           </div>
         </motion.div>
+
+        {/* Premium Activity Panel: 3 Bento icons */}
+        <div className="grid grid-cols-3 gap-2.5 my-0.5">
+          {/* Daily Reward claim */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleNav('DAILY_REWARDS')}
+            className="relative flex flex-col items-center justify-center py-2.5 px-1 bg-white/70 hover:bg-white active:bg-rose-50 backdrop-blur-md text-rose-800 rounded-xl border border-rose-200/50 shadow-md cursor-pointer"
+          >
+            <Gift className="w-4.5 h-4.5 text-rose-500 fill-rose-500/10 mb-1" />
+            <span className="text-[9px] font-black tracking-wider uppercase">Daily Gift</span>
+          </motion.button>
+
+          {/* Lucky Spin Wheel */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleNav('LUCKY_SPIN')}
+            className="relative flex flex-col items-center justify-center py-2.5 px-1 bg-white/70 hover:bg-white active:bg-rose-50 backdrop-blur-md text-rose-800 rounded-xl border border-rose-200/50 shadow-md cursor-pointer"
+          >
+            <RefreshCw className="w-4.5 h-4.5 text-amber-500 mb-1" />
+            <span className="text-[9px] font-black tracking-wider uppercase">Lucky Spin</span>
+            {(stats.luckySpinsRemaining || 0) > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping" />
+            )}
+            {(stats.luckySpinsRemaining || 0) > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-amber-500 rounded-full" />
+            )}
+          </motion.button>
+
+          {/* Talent/Skill Tree */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleNav('SKILL_TREE')}
+            className="relative flex flex-col items-center justify-center py-2.5 px-1 bg-white/70 hover:bg-white active:bg-rose-50 backdrop-blur-md text-rose-800 rounded-xl border border-rose-200/50 shadow-md cursor-pointer"
+          >
+            <Zap className="w-4.5 h-4.5 text-indigo-500 fill-indigo-500/10 mb-1 animate-pulse" />
+            <span className="text-[9px] font-black tracking-wider uppercase">Talents</span>
+          </motion.button>
+        </div>
 
         {/* Story Mode - Gold/Orange with pulsing glow */}
         <motion.button
@@ -487,6 +550,19 @@ export default function MainMenu({
                     <Crown className="w-5 h-5 text-indigo-500 mb-1" />
                     <span className="text-2xl font-black font-mono text-rose-900">{(stats.storyLevelProgress || 1) - 1}/5</span>
                     <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider font-mono">Levels Cleared</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-rose-50/50 border border-rose-100/50 p-3.5 rounded-2xl flex flex-col items-center justify-center text-center">
+                    <Skull className="w-5 h-5 text-red-500 mb-1" />
+                    <span className="text-2xl font-black font-mono text-rose-900">{stats.bossesDefeated || 0}</span>
+                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider font-mono">Bosses Defeated</span>
+                  </div>
+                  <div className="bg-rose-50/50 border border-rose-100/50 p-3.5 rounded-2xl flex flex-col items-center justify-center text-center">
+                    <Zap className="w-5 h-5 text-yellow-500 mb-1" />
+                    <span className="text-2xl font-black font-mono text-rose-900">{stats.skillsUnlocked?.length || 0}</span>
+                    <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider font-mono">Talents Mastered</span>
                   </div>
                 </div>
 
