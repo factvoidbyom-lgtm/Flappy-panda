@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">FLAPPY PANDA : Remastered</string>
-    <string name="title_activity_main">FLAPPY PANDA : Remastered</string>
-    <string name="package_name">com.omrahman.flappypanda.remastered</string>
-    <string name="custom_url_scheme">com.omrahman.flappypanda.remastered</string>
-</resources>
