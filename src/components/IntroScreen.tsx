@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface IntroScreenProps {
@@ -7,8 +7,142 @@ interface IntroScreenProps {
 
 export default function IntroScreen({ onComplete }: IntroScreenProps) {
   const [phase, setPhase] = useState<'flare' | 'omg' | 'subtitle' | 'fadeout'>('flare');
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const audioStartedRef = useRef(false);
+
+  const playCinematicIntro = () => {
+    if (audioStartedRef.current) return;
+    audioStartedRef.current = true;
+
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      // Master Ambient Gain Control
+      const masterGain = ctx.createGain();
+      masterGain.gain.setValueAtTime(0, ctx.currentTime);
+      masterGain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 0.8);
+      masterGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4.5);
+      masterGain.connect(ctx.destination);
+
+      // Deep Cinematic Lowpass filter sweep
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(90, ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(450, ctx.currentTime + 1.8);
+      filter.Q.setValueAtTime(5, ctx.currentTime);
+      filter.connect(masterGain);
+
+      // Deep Sub-Drone hum (G1 + C2 + G2)
+      const osc1 = ctx.createOscillator();
+      osc1.type = 'sawtooth';
+      osc1.frequency.setValueAtTime(65.41, ctx.currentTime); // C2
+
+      const osc2 = ctx.createOscillator();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(48.99, ctx.currentTime); // G1
+
+      const osc3 = ctx.createOscillator();
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(98.00, ctx.currentTime); // G2
+
+      osc1.connect(filter);
+      osc2.connect(filter);
+      osc3.connect(filter);
+
+      osc1.start();
+      osc2.start();
+      osc3.start();
+
+      osc1.stop(ctx.currentTime + 4.5);
+      osc2.stop(ctx.currentTime + 4.5);
+      osc3.stop(ctx.currentTime + 4.5);
+
+      // Celestial Chime Sparkle scheduled exactly at 1.2s (OMG visual flare)
+      const chimeTime = ctx.currentTime + 1.15;
+      const chimeGain = ctx.createGain();
+      chimeGain.gain.setValueAtTime(0, ctx.currentTime);
+      chimeGain.gain.setValueAtTime(0, chimeTime);
+      chimeGain.gain.linearRampToValueAtTime(0.25, chimeTime + 0.05);
+      chimeGain.gain.exponentialRampToValueAtTime(0.001, chimeTime + 2.2);
+
+      // Stereo Sparkle Delay FX
+      const delay = ctx.createDelay();
+      delay.delayTime.value = 0.22;
+      const delayGain = ctx.createGain();
+      delayGain.gain.value = 0.45;
+
+      chimeGain.connect(ctx.destination);
+      chimeGain.connect(delay);
+      delay.connect(delayGain);
+      delayGain.connect(ctx.destination);
+      delayGain.connect(delay); // Feedback feedback loop
+
+      // Arpeggiating Golden Chord for "OMG" (C5 -> E5 -> G5 -> B5 -> D6 -> G6)
+      const chimeFreqs = [523.25, 659.25, 783.99, 987.77, 1174.66, 1567.98];
+      chimeFreqs.forEach((freq, index) => {
+        const chimeOsc = ctx.createOscillator();
+        chimeOsc.type = 'sine';
+        // Elegant staggered roll
+        chimeOsc.frequency.setValueAtTime(freq, chimeTime + index * 0.04);
+        chimeOsc.connect(chimeGain);
+        chimeOsc.start(chimeTime);
+        chimeOsc.stop(chimeTime + 2.5);
+      });
+
+      // Majestic Divine Golden Pad scheduled at 2.2s ("Made by OM BRAHMAN" reveal)
+      const padTime = ctx.currentTime + 2.15;
+      const padGain = ctx.createGain();
+      padGain.gain.setValueAtTime(0, ctx.currentTime);
+      padGain.gain.setValueAtTime(0, padTime);
+      padGain.gain.linearRampToValueAtTime(0.22, padTime + 0.45);
+      padGain.gain.exponentialRampToValueAtTime(0.001, padTime + 2.2);
+
+      const padFilter = ctx.createBiquadFilter();
+      padFilter.type = 'lowpass';
+      padFilter.frequency.setValueAtTime(350, padTime);
+      padFilter.frequency.exponentialRampToValueAtTime(1400, padTime + 1.2);
+      padFilter.Q.setValueAtTime(3, padTime);
+
+      padGain.connect(padFilter);
+      padFilter.connect(ctx.destination);
+
+      // Royal Brass Golden Pad frequencies (C3, G3, C4, E4, G4, B4)
+      const padFreqs = [130.81, 196.00, 261.63, 329.63, 392.00, 493.88];
+      padFreqs.forEach((freq) => {
+        const padOsc = ctx.createOscillator();
+        padOsc.type = 'triangle';
+        padOsc.frequency.setValueAtTime(freq, padTime);
+
+        // Add subtle pitch vibrato for organic movement
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.value = 4.8; // 4.8Hz pulse
+        lfoGain.gain.value = 2.5; // pitch wiggle
+        lfo.connect(lfoGain);
+        lfoGain.connect(padOsc.frequency);
+
+        padOsc.connect(padGain);
+        lfo.start(padTime);
+        padOsc.start(padTime);
+
+        lfo.stop(padTime + 2.3);
+        padOsc.stop(padTime + 2.3);
+      });
+
+    } catch (err) {
+      console.warn('Web Audio initialization error:', err);
+    }
+  };
 
   useEffect(() => {
+    // Attempt automatic cinematic soundscape sweep
+    playCinematicIntro();
+
     // Cinematic orchestration timers
     const t1 = setTimeout(() => {
       setPhase('omg');
@@ -34,10 +168,16 @@ export default function IntroScreen({ onComplete }: IntroScreenProps) {
     };
   }, [onComplete]);
 
+  const handleTapScreen = () => {
+    setHasInteracted(true);
+    playCinematicIntro(); // Ensure audio plays on interaction if blocked by autoplay policy
+    onComplete();
+  };
+
   return (
     <div
       id="intro-screen"
-      onClick={onComplete}
+      onClick={handleTapScreen}
       className="fixed inset-0 flex flex-col items-center justify-center bg-black text-white select-none overflow-hidden cursor-pointer"
     >
       {/* Tap to skip hint - subtle and placed at the bottom */}
