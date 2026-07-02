@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GameScreen, Difficulty, UserStats, GameSettings, DailyMission, generateDailyMissions, GameMode, STORY_LEVELS } from './types';
 import LoadingScreen from './components/LoadingScreen';
+import IntroScreen from './components/IntroScreen';
 import MainMenu from './components/MainMenu';
 import DifficultySelect from './components/DifficultySelect';
 import GameCanvas from './components/GameCanvas';
@@ -52,7 +53,7 @@ const getTodayDateString = () => {
 };
 
 export default function App() {
-  const [screen, setScreen] = useState<GameScreen>('LOADING');
+  const [screen, setScreen] = useState<GameScreen>('INTRO');
   const [stats, setStats] = useState<UserStats>(DEFAULT_STATS);
   const [difficulty, setDifficulty] = useState<Difficulty>('MEDIUM');
   const [settings, setSettings] = useState<GameSettings>({
@@ -356,6 +357,8 @@ export default function App() {
 
   const renderActiveScreen = () => {
     switch (screen) {
+      case 'INTRO':
+        return <IntroScreen onComplete={() => setScreen('LOADING')} />;
       case 'LOADING':
         return <LoadingScreen onComplete={() => setScreen('MENU')} />;
       case 'MENU':

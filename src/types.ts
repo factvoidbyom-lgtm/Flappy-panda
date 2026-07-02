@@ -1,4 +1,4 @@
-export type GameScreen = 'LOADING' | 'MENU' | 'DIFFICULTY' | 'GAME' | 'SHOP' | 'SETTINGS' | 'STORY_LEVELS' | 'PRE_GAME_LOADING' | 'LUCKY_SPIN' | 'DAILY_REWARDS' | 'SKILL_TREE';
+export type GameScreen = 'INTRO' | 'LOADING' | 'MENU' | 'DIFFICULTY' | 'GAME' | 'SHOP' | 'SETTINGS' | 'STORY_LEVELS' | 'PRE_GAME_LOADING' | 'LUCKY_SPIN' | 'DAILY_REWARDS' | 'SKILL_TREE';
 
 export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD' | 'INSANE';
 
