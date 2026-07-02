@@ -3,6 +3,12 @@ apply plugin: 'com.android.application'
 android {
     namespace = "com.omrahman.flappypanda.remastered"
     compileSdk = rootProject.ext.compileSdkVersion
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
     defaultConfig {
         applicationId "com.omrahman.flappypanda.remastered"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -16,8 +22,26 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    buildTypes {
+
+    signingConfigs {
+        debug {
+            // Uses standard debug.keystore credentials
+        }
         release {
+            // Professional release signing configuration with robust environment variables & fallback
+            storeFile file(System.getenv("RELEASE_KEYSTORE_PATH") ?: "debug.keystore")
+            storePassword System.getenv("RELEASE_KEYSTORE_PASSWORD") ?: "android"
+            keyAlias System.getenv("RELEASE_KEY_ALIAS") ?: "androiddebugkey"
+            keyPassword System.getenv("RELEASE_KEY_PASSWORD") ?: "android"
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

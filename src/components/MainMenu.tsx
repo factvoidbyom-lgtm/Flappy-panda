@@ -20,9 +20,7 @@ import {
   Flame, 
   Skull,
   Gift,
-  RefreshCw,
-  Smartphone,
-  FolderDown
+  RefreshCw
 } from 'lucide-react';
 import { SKIN_LIST, PandaSkin, DailyMission, UserStats, GameScreen } from '../types';
 import PandaAvatar from './PandaAvatar';
@@ -97,91 +95,6 @@ export default function MainMenu({
   const [isMissionsOpen, setIsMissionsOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
-  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
-
-  const downloadOfflinePackage = () => {
-    playClick();
-    const htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FLAPPY PANDA : Remastered Offline Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background: #fff5f6;
-            font-family: system-ui, -apple-system, sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            color: #4c0519;
-            user-select: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="w-full max-w-md bg-white border border-rose-100 rounded-[32px] p-6 text-center shadow-2xl space-y-6 mx-4">
-        <div class="space-y-2">
-            <span class="text-[9px] font-mono font-black text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full tracking-wider uppercase">
-                OFFLINE RUNNER
-            </span>
-            <h1 class="text-3xl font-black tracking-widest text-rose-600 uppercase mt-2">PANDA FLAP</h1>
-            <p class="text-[10px] text-rose-500 font-bold uppercase tracking-wider">
-                Remastered Offline Edition
-            </p>
-        </div>
-
-        <div class="relative w-36 h-36 bg-rose-50 rounded-full border border-rose-100 flex items-center justify-center mx-auto">
-            <!-- Cute Panda Face SVG -->
-            <svg viewBox="0 0 100 100" class="w-24 h-24">
-                <circle cx="50" cy="52" r="36" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" />
-                <circle cx="28" cy="22" r="11" fill="#1e293b" />
-                <circle cx="72" cy="22" r="11" fill="#1e293b" />
-                <ellipse cx="35" cy="48" rx="10" ry="12" fill="#1e293b" />
-                <ellipse cx="65" cy="48" rx="10" ry="12" fill="#1e293b" />
-                <circle cx="35" cy="46" r="3" fill="#ffffff" />
-                <circle cx="65" cy="46" r="3" fill="#ffffff" />
-                <ellipse cx="50" cy="59" rx="10" ry="7" fill="#ffffff" />
-                <polygon points="47,56 53,56 50,59" fill="#1e293b" />
-            </svg>
-        </div>
-
-        <div class="bg-rose-50/50 p-4 rounded-2xl border border-rose-100 space-y-2 text-left">
-            <h3 class="text-xs font-extrabold text-rose-950 uppercase tracking-wider">How to play on your phone:</h3>
-            <ol class="text-[10px] text-rose-700/90 font-semibold space-y-1.5 list-decimal list-inside uppercase tracking-wide">
-                <li>Copy this HTML file to your Phone's storage.</li>
-                <li>Tap to open the file in Chrome, Safari, or any browser.</li>
-                <li>Tap "Add to Home Screen" to install it as an App!</li>
-                <li>Play fully offline anytime, anywhere with no mobile data!</li>
-            </ol>
-        </div>
-
-        <button onclick="window.open('${window.location.href}', '_blank')" class="w-full py-4 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white rounded-2xl font-black text-xs tracking-widest uppercase shadow-lg transition-all duration-200 cursor-pointer">
-            START THE GAME ONLINE
-        </button>
-
-        <p class="text-[8px] font-mono font-bold text-rose-450 tracking-wider uppercase">
-            CREATED BY OM BRAHMAN
-        </p>
-    </div>
-</body>
-</html>`;
-
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'PandaFlap_Offline.html';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
 
   const handleNav = (screen: GameScreen) => {
     playClick();
@@ -388,18 +301,6 @@ export default function MainMenu({
           <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
           <Play className="w-4 h-4 fill-current text-white" />
           <span>PLAY GAME</span>
-        </motion.button>
-
-        {/* Download Android APK / Mobile App button */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => { playClick(); setIsDownloadOpen(true); }}
-          className="group relative flex items-center justify-center space-x-3 w-full py-3.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white rounded-2xl font-black text-xs tracking-[0.2em] uppercase shadow-[0_8px_20px_rgba(16,185,129,0.18)] border border-emerald-400/20 cursor-pointer overflow-hidden transition-all duration-300 animate-pulse"
-          style={{ animationDuration: '3s' }}
-        >
-          <Smartphone className="w-4 h-4 text-white animate-bounce" />
-          <span>DOWNLOAD MOBILE APK</span>
         </motion.button>
 
         {/* Secondary buttons grid: 2x2 layout */}
@@ -792,110 +693,7 @@ export default function MainMenu({
         )}
       </AnimatePresence>
 
-      {/* APK & OFFLINE RUNNER DOWNLOAD DRAWER OVERLAY */}
-      <AnimatePresence>
-        {isDownloadOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsDownloadOpen(false)}
-              className="absolute inset-0 bg-rose-950/25 backdrop-blur-sm z-40 cursor-pointer"
-            />
 
-            {/* Bottom Drawer Sheet */}
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="absolute bottom-0 left-0 right-0 max-h-[92%] bg-white border-t border-rose-100 rounded-t-[32px] p-6 pb-8 z-50 flex flex-col space-y-4 shadow-[0_-15px_40px_rgba(16,185,129,0.15)] backdrop-blur-xl text-rose-950"
-            >
-              <div className="absolute inset-0 rounded-t-[32px] border-t border-x border-rose-50 pointer-events-none" />
-              <div className="w-10 h-1 bg-rose-200 rounded-full mx-auto" />
-
-              {/* Header */}
-              <div className="flex items-center justify-between w-full">
-                <div className="text-left space-y-0.5">
-                  <h2 className="text-base font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600 uppercase">MOBILE APK & DOWNLOADS</h2>
-                  <p className="text-[9px] text-emerald-600 uppercase tracking-widest font-mono font-bold">Offline installation guide & downloads</p>
-                </div>
-                <button
-                  onClick={() => { playClick(); setIsDownloadOpen(false); }}
-                  className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-400 hover:text-rose-600 rounded-full border border-rose-100 transition-colors cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Options List */}
-              <div className="flex flex-col space-y-4 overflow-y-auto pr-1 max-h-[420px] pb-4">
-                
-                {/* 1. Direct offline HTML downloader */}
-                <div className="bg-gradient-to-r from-emerald-500/[0.03] to-teal-500/[0.03] border border-emerald-100/80 p-4 rounded-2xl relative overflow-hidden flex flex-col space-y-3 shadow-sm">
-                  <div className="flex justify-between items-start">
-                    <div className="text-left space-y-0.5">
-                      <span className="text-[8px] font-mono font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full tracking-wider uppercase">
-                        ZERO SETUP &bull; 100% WORKING
-                      </span>
-                      <h3 className="text-xs font-black text-rose-950 uppercase tracking-wide mt-1.5">Direct Standalone Web App</h3>
-                      <p className="text-[10px] text-rose-700/85 font-semibold uppercase leading-normal tracking-wide">
-                        Download a direct, offline playable package of Flappy Panda! Opens instantly on any Android, iOS, or PC browser fully offline!
-                      </p>
-                    </div>
-                    <FolderDown className="w-7 h-7 text-emerald-500 shrink-0" />
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={downloadOfflinePackage}
-                    className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl font-black text-[10px] tracking-widest uppercase shadow-md cursor-pointer border border-emerald-400/25 flex items-center justify-center space-x-1.5"
-                  >
-                    <FolderDown className="w-4 h-4 text-white" />
-                    <span>DOWNLOAD STANDALONE APP</span>
-                  </motion.button>
-                </div>
-
-                {/* 2. Direct 1-Click build script instructions */}
-                <div className="bg-rose-50/20 border border-rose-100 p-4 rounded-2xl space-y-3 text-left shadow-sm">
-                  <h3 className="text-xs font-black text-rose-950 uppercase tracking-wide flex items-center space-x-2">
-                    <Smartphone className="w-4 h-4 text-rose-600" />
-                    <span>Run APK Compiler Locally</span>
-                  </h3>
-                  <p className="text-[10px] text-rose-700/85 font-bold uppercase tracking-wide leading-relaxed">
-                    Build your physical Android APK package locally in seconds! Copy-paste these simple commands in your terminal to compile with Capacitor/Gradle:
-                  </p>
-
-                  <div className="bg-rose-950 text-rose-100 p-3.5 rounded-xl font-mono text-[9px] tracking-wide leading-relaxed border border-rose-900 select-all cursor-pointer">
-                    npm run build && npx cap sync && npx cap open android
-                  </div>
-
-                  <p className="text-[9px] text-rose-500/80 font-semibold uppercase tracking-wide">
-                    ⚠️ Tip: Make sure you have Android Studio installed to generate the final .apk!
-                  </p>
-                </div>
-
-                {/* 3. GitHub Action prebuilt APK instructions */}
-                <div className="bg-rose-50/20 border border-rose-100 p-4 rounded-2xl space-y-2 text-left shadow-sm">
-                  <h3 className="text-xs font-black text-rose-950 uppercase tracking-wide">Precompiled APK via GitHub</h3>
-                  <p className="text-[10px] text-rose-700/85 font-bold uppercase tracking-wide leading-relaxed">
-                    Bypass GitHub Actions workflow errors completely! You can download the completed APK build artifact by:
-                  </p>
-                  <ul className="text-[9px] text-rose-500/90 font-bold uppercase tracking-wide space-y-1 list-disc list-inside">
-                    <li>Exporting the ZIP of this project (Settings &rarr; Export to ZIP).</li>
-                    <li>Importing this workspace to GitHub.</li>
-                    <li>Navigating directly to your GitHub Repository Actions tab to download the compiled artifact.</li>
-                  </ul>
-                </div>
-
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
