@@ -1,0 +1,28 @@
+{
+  "name": "FLAPPY PANDA : Remastered",
+  "displayName": "FLAPPY PANDA : Remastered",
+  "slug": "flappy-panda-remastered",
+  "version": "1.0.0",
+  "description": "An elegant flappy-arcade game where you guide a cute panda through bamboo forests, collect coins, and unlock cool skins.",
+  "author": "imshobhagoswami@gmail.com",
+  "private": true,
+  "expo": {
+    "name": "FLAPPY PANDA : Remastered",
+    "slug": "flappy-panda-remastered",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.omrahman.flappypanda.remastered"
+    },
+    "android": {
+      "package": "com.omrahman.flappypanda.remastered"
+    }
+  },
+  "capacitor": {
+    "appId": "com.omrahman.flappypanda.remastered",
+    "appName": "FLAPPY PANDA : Remastered",
+    "webDir": "dist"
+  }
+}
