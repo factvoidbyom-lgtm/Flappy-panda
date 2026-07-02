@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, X, Coins, Gift, RefreshCw, Timer } from 'lucide-react';
 import { playClick, playUnlock, playCoin } from '../utils/audio';
@@ -39,6 +39,7 @@ export default function LuckySpin({
 }: LuckySpinProps) {
   const [rotation, setRotation] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
+  const spinInProgressRef = useRef(false);
   const [wonPrize, setWonPrize] = useState<typeof PRIZES[0] | null>(null);
   const [showPrizeModal, setShowPrizeModal] = useState(false);
   const [timeLeftStr, setTimeLeftStr] = useState<string>('24:00:00');
@@ -80,11 +81,12 @@ export default function LuckySpin({
   };
 
   const handleSpin = () => {
-    if (isSpinning || luckySpinsRemaining <= 0) {
+    if (isSpinning || luckySpinsRemaining <= 0 || spinInProgressRef.current) {
       playClick();
       return;
     }
 
+    spinInProgressRef.current = true;
     playUnlock();
     setIsSpinning(true);
     onDeductSpin();
@@ -109,6 +111,7 @@ export default function LuckySpin({
 
     setTimeout(() => {
       setIsSpinning(false);
+      spinInProgressRef.current = false;
       const prize = PRIZES[prizeIndex];
       setWonPrize(prize);
 
