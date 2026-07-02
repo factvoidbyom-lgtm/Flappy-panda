@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 
 interface PandaAvatarProps {
-  skinType: 'classic' | 'red' | 'sakura' | 'astro' | 'frosty' | 'sprite' | 'ninja' | 'ghost' | 'cyber' | 'storm' | 'golden' | 'chrono' | 'emperor';
+  skinType: 'classic' | 'red' | 'sakura' | 'astro' | 'frosty' | 'sprite' | 'ninja' | 'ghost' | 'cyber' | 'storm' | 'golden' | 'chrono' | 'emperor' | 'brahmans';
   size?: number;
   className?: string;
   isFlying?: boolean;
@@ -107,6 +107,14 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
           cheek: '#fca5a5',
           eye: '#7f1d1d'
         };
+      case 'brahmans':
+        return {
+          main: '#fef08a', // vibrant pale gold
+          dark: '#78350f', // deep warm gold-amber
+          light: '#fde047', // bright glowing yellow gold
+          cheek: '#ea580c', // peach blush
+          eye: '#78350f'
+        };
       case 'classic':
       default:
         return {
@@ -175,14 +183,14 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
           cy="22"
           rx="12"
           ry="10"
-          fill={skinType === 'golden' ? 'url(#goldGlow)' : colors.dark}
+          fill={(skinType === 'golden' || skinType === 'brahmans') ? 'url(#goldGlow)' : colors.dark}
         />
         <ellipse
           cx="28"
           cy="22"
           rx="7"
           ry="6"
-          fill={skinType === 'golden' ? '#78350f' : colors.light}
+          fill={(skinType === 'golden' || skinType === 'brahmans') ? '#78350f' : colors.light}
         />
 
         {/* Right Ear */}
@@ -191,14 +199,14 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
           cy="22"
           rx="12"
           ry="10"
-          fill={skinType === 'golden' ? 'url(#goldGlow)' : colors.dark}
+          fill={(skinType === 'golden' || skinType === 'brahmans') ? 'url(#goldGlow)' : colors.dark}
         />
         <ellipse
           cx="72"
           cy="22"
           rx="7"
           ry="6"
-          fill={skinType === 'golden' ? '#78350f' : colors.light}
+          fill={(skinType === 'golden' || skinType === 'brahmans') ? '#78350f' : colors.light}
         />
 
         {/* --- Face Base --- */}
@@ -206,8 +214,8 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
           cx="50"
           cy="52"
           r="36"
-          fill={skinType === 'golden' ? 'url(#goldGlow)' : colors.main}
-          stroke={skinType === 'golden' ? '#d97706' : '#cbd5e1'}
+          fill={(skinType === 'golden' || skinType === 'brahmans') ? 'url(#goldGlow)' : colors.main}
+          stroke={(skinType === 'golden' || skinType === 'brahmans') ? '#d97706' : '#cbd5e1'}
           strokeWidth="1.5"
         />
 
@@ -232,7 +240,7 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
               rx="11"
               ry="13"
               transform="rotate(-12, 35, 48)"
-              fill={skinType === 'golden' ? '#92400e' : colors.dark}
+              fill={(skinType === 'golden' || skinType === 'brahmans') ? '#92400e' : colors.dark}
             />
             {/* Right Patch */}
             <ellipse
@@ -241,7 +249,7 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
               rx="11"
               ry="13"
               transform="rotate(12, 65, 48)"
-              fill={skinType === 'golden' ? '#92400e' : colors.dark}
+              fill={(skinType === 'golden' || skinType === 'brahmans') ? '#92400e' : colors.dark}
             />
           </>
         )}
@@ -303,15 +311,15 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
         {skinType !== 'ninja' && (
           <>
             {/* Snout Background */}
-            <ellipse cx="50" cy="59" rx="11" ry="8" fill={skinType === 'golden' ? '#fde047' : '#ffffff'} />
+            <ellipse cx="50" cy="59" rx="11" ry="8" fill={(skinType === 'golden' || skinType === 'brahmans') ? '#fde047' : '#ffffff'} />
             
             {/* Nose */}
-            <polygon points="47,56 53,56 50,59" fill={skinType === 'golden' ? '#78350f' : '#1e293b'} />
+            <polygon points="47,56 53,56 50,59" fill={(skinType === 'golden' || skinType === 'brahmans') ? '#78350f' : '#1e293b'} />
             
             {/* Cute Smile */}
             <path
               d="M 45 60 Q 48 63 50 60 Q 52 63 55 60"
-              stroke={skinType === 'golden' ? '#78350f' : '#1e293b'}
+              stroke={(skinType === 'golden' || skinType === 'brahmans') ? '#78350f' : '#1e293b'}
               strokeWidth="1.5"
               strokeLinecap="round"
             />
@@ -371,6 +379,50 @@ export default function PandaAvatar({ skinType, size = 120, className = '', isFl
             <circle cx="14" cy="9" r="1.5" fill="#3b82f6" />
             <circle cx="22" cy="2" r="1.5" fill="#ef4444" />
           </g>
+        )}
+
+        {/* --- Holy Brahman Aura & Divine Crown for Brahmans Skin --- */}
+        {skinType === 'brahmans' && (
+          <>
+            {/* Spinning Divine Halo */}
+            <circle
+              cx="50"
+              cy="52"
+              r="44"
+              fill="none"
+              stroke="#fbbf24"
+              strokeWidth="2.5"
+              strokeDasharray="6 4"
+              opacity="0.85"
+            />
+
+            {/* Glowing inner aura */}
+            <circle
+              cx="50"
+              cy="52"
+              r="40"
+              fill="none"
+              stroke="#f59e0b"
+              strokeWidth="1.5"
+              opacity="0.5"
+            />
+
+            {/* Grand Royal Crown for Brahmans */}
+            <g transform="translate(32, 1)">
+              <path
+                d="M 2 15 L 6 2 L 13 9 L 18 2 L 25 9 L 30 2 L 34 15 Z"
+                fill="url(#goldCrown)"
+                stroke="#92400e"
+                strokeWidth="1.5"
+              />
+              {/* Crown precious gems */}
+              <circle cx="6" cy="1.5" r="1.5" fill="#3b82f6" />
+              <circle cx="18" cy="1.5" r="1.5" fill="#ef4444" />
+              <circle cx="30" cy="1.5" r="1.5" fill="#3b82f6" />
+              <circle cx="13" cy="8" r="1.2" fill="#10b981" />
+              <circle cx="25" cy="8" r="1.2" fill="#10b981" />
+            </g>
+          </>
         )}
       </svg>
     </motion.div>

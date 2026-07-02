@@ -40,6 +40,13 @@ export default function Shop({
     amount?: number;
   } | null>(null);
 
+  // Code entry modal states
+  const [codeModalOpen, setCodeModalOpen] = useState(false);
+  const [enteredCode, setEnteredCode] = useState('');
+  const [codeError, setCodeError] = useState('');
+  const [codeSuccess, setCodeSuccess] = useState(false);
+  const [selectedCodeSkin, setSelectedCodeSkin] = useState<PandaSkin | null>(null);
+
   const handleBack = () => {
     playClick();
     onBack();
@@ -52,13 +59,38 @@ export default function Shop({
       playClick();
       onEquipSkin(skin.id);
     } else {
-      if (coins >= skin.cost) {
+      if (skin.isCodeRequired) {
+        playClick();
+        setSelectedCodeSkin(skin);
+        setCodeModalOpen(true);
+      } else if (coins >= skin.cost) {
         playUnlock();
         onBuySkin(skin.id, skin.cost);
       } else {
         playClick();
       }
     }
+  };
+
+  const handleVerifyCode = () => {
+    if (enteredCode.trim().toUpperCase() === 'OMG') {
+      playUnlock();
+      setCodeSuccess(true);
+      setCodeError('');
+      onBuySkin('brahmans', 0); // Unlocks and equips for 0 coins!
+    } else {
+      playClick();
+      setCodeError('Incorrect code! Try "OMG"');
+    }
+  };
+
+  const handleCloseCodeModal = () => {
+    playClick();
+    setCodeModalOpen(false);
+    setEnteredCode('');
+    setCodeError('');
+    setCodeSuccess(false);
+    setSelectedCodeSkin(null);
   };
 
   const handleOpenMysteryBox = () => {
@@ -207,7 +239,7 @@ export default function Shop({
           {SKIN_LIST.map((skin, idx) => {
             const isUnlocked = unlockedSkins.includes(skin.id);
             const isEquipped = equippedSkinId === skin.id;
-            const canAfford = coins >= skin.cost;
+            const canAfford = skin.isCodeRequired ? false : (coins >= skin.cost);
             const rarityConf = RARITY_COLORS[skin.rarity || 'Common'];
 
             return (
@@ -259,11 +291,13 @@ export default function Shop({
                       ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300 shadow-sm shadow-emerald-500/5 font-black'
                       : isUnlocked
                         ? 'bg-white hover:bg-rose-50 text-rose-800 border-rose-200'
-                        : canAfford
-                          ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-300 shadow-sm font-black'
-                          : 'bg-rose-50/30 text-rose-350 border-rose-100/35 cursor-not-allowed opacity-40'
+                        : skin.isCodeRequired
+                          ? 'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-white border-amber-400 shadow-md font-extrabold animate-pulse'
+                          : canAfford
+                            ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-300 shadow-sm font-black'
+                            : 'bg-rose-50/30 text-rose-350 border-rose-100/35 cursor-not-allowed opacity-40'
                   }`}
-                  disabled={!isUnlocked && !canAfford}
+                  disabled={!isUnlocked && !canAfford && !skin.isCodeRequired}
                 >
                   {isEquipped ? (
                     <>
@@ -272,6 +306,11 @@ export default function Shop({
                     </>
                   ) : isUnlocked ? (
                     <span>EQUIP</span>
+                  ) : skin.isCodeRequired ? (
+                    <>
+                      <Lock className="w-3 h-3 text-white fill-white/10 mr-0.5" />
+                      <span>CODE UNLOCK</span>
+                    </>
                   ) : (
                     <span className="flex items-center space-x-1">
                       <Coins className="w-3 h-3 text-yellow-500 fill-yellow-500/10 mr-0.5" />
@@ -376,6 +415,125 @@ export default function Shop({
                   className="w-full py-3 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-450 text-white rounded-xl font-black text-[11px] tracking-widest uppercase cursor-pointer border border-amber-400 shadow-md"
                 >
                   AWESOME!
+                </button>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Secret Creator Code Unlock Modal */}
+      <AnimatePresence>
+        {codeModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-rose-950/75 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6"
+          >
+            {!codeSuccess ? (
+              <motion.div
+                initial={{ scale: 0.9, y: 15 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 15 }}
+                className="bg-white border-2 border-amber-300 w-full max-w-sm rounded-[32px] p-6 text-center space-y-5 shadow-2xl relative overflow-hidden"
+              >
+                {/* Background flare */}
+                <div className="absolute top-[-30%] right-[-20%] w-36 h-36 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-3.5 bg-amber-500/10 text-amber-600 rounded-full border border-amber-200">
+                    <Lock className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <h3 className="text-lg font-black text-rose-950 uppercase tracking-wider mt-2">
+                    Enter Secret Code
+                  </h3>
+                  <p className="text-[10px] text-rose-700/85 font-bold uppercase leading-relaxed max-w-[240px] mx-auto">
+                    Type the correct secret code to unlock the legendary golden {selectedCodeSkin?.name || 'BRAHMANS'} skin!
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={enteredCode}
+                    onChange={(e) => {
+                      setEnteredCode(e.target.value);
+                      if (codeError) setCodeError('');
+                    }}
+                    placeholder="Enter Secret Code"
+                    className="w-full py-3 px-4 rounded-xl text-center font-black tracking-widest text-lg uppercase bg-rose-50/40 border border-rose-200/60 text-rose-950 focus:outline-none focus:border-amber-400 focus:bg-white transition-all duration-200"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleVerifyCode();
+                    }}
+                  />
+
+                  {codeError && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-[10px] text-red-500 font-extrabold tracking-wide uppercase"
+                    >
+                      ⚠️ {codeError}
+                    </motion.p>
+                  )}
+                </div>
+
+                <div className="flex space-x-2.5 pt-2">
+                  <button
+                    onClick={handleCloseCodeModal}
+                    className="flex-1 py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl font-bold text-[10px] tracking-wider uppercase border border-rose-200 cursor-pointer transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleVerifyCode}
+                    disabled={!enteredCode.trim()}
+                    className={`flex-1 py-3 rounded-xl font-black text-[10px] tracking-wider uppercase border transition-all cursor-pointer ${
+                      enteredCode.trim()
+                        ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-white border-amber-400 shadow-md'
+                        : 'bg-slate-50 text-slate-350 border-slate-200/60 cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    Unlock
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ scale: 0.9, y: 15 }}
+                animate={{ scale: 1, y: 0 }}
+                className="bg-white border-2 border-amber-300 w-full max-w-sm rounded-[32px] p-6 text-center space-y-5 shadow-2xl relative overflow-hidden flex flex-col items-center"
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.08)_0%,transparent_75%)] pointer-events-none" />
+
+                <div className="p-4 bg-amber-500/10 text-amber-600 rounded-full border border-amber-300 shadow-sm animate-bounce">
+                  <Sparkles className="w-8 h-8" />
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[9px] font-mono font-black text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full tracking-wider uppercase">
+                    SECRET UNLOCKED!
+                  </span>
+                  <h3 className="text-xl font-black text-rose-950 uppercase tracking-wide">
+                    BRAHMANS Skin Unlocked!
+                  </h3>
+                  <p className="text-xs font-bold text-rose-700 leading-relaxed uppercase tracking-wider max-w-[250px]">
+                    The ultimate golden divinity is now equipped!
+                  </p>
+                </div>
+
+                {/* Show Brahmans skin preview */}
+                <div className="relative w-24 h-24 flex items-center justify-center bg-rose-50/50 rounded-2xl border border-rose-100">
+                  <PandaAvatar skinType="brahmans" size={70} isFlying={true} />
+                </div>
+
+                <button
+                  onClick={handleCloseCodeModal}
+                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-450 text-white rounded-xl font-black text-[11px] tracking-widest uppercase cursor-pointer border border-amber-400 shadow-md transition-all duration-200"
+                >
+                  LET'S FLY!
                 </button>
               </motion.div>
             )}

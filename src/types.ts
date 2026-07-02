@@ -9,11 +9,12 @@ export interface PandaSkin {
   name: string;
   cost: number;
   description: string;
-  type: 'classic' | 'red' | 'astro' | 'ninja' | 'golden' | 'sakura' | 'frosty' | 'sprite' | 'ghost' | 'cyber' | 'storm' | 'chrono' | 'emperor';
+  type: 'classic' | 'red' | 'astro' | 'ninja' | 'golden' | 'sakura' | 'frosty' | 'sprite' | 'ghost' | 'cyber' | 'storm' | 'chrono' | 'emperor' | 'brahmans';
   accentColor: string;
   rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
   ability: string;
   abilityDesc: string;
+  isCodeRequired?: boolean;
 }
 
 export interface GameSettings {
@@ -203,6 +204,18 @@ export const SKIN_LIST: PandaSkin[] = [
     rarity: 'Mythic',
     ability: 'Imperial Will',
     abilityDesc: 'Increases starting maximum hearts count to 4.'
+  },
+  {
+    id: 'brahmans',
+    name: 'BRAHMANS',
+    cost: 0,
+    description: 'The ultimate golden divinity created by OM BRAHMAN. Unleashed only with the cosmic code.',
+    type: 'brahmans',
+    accentColor: '#fbbf24',
+    rarity: 'Mythic',
+    ability: 'Divine Aurora',
+    abilityDesc: 'Golden protection shield, 2x coins, and slower obstacles!',
+    isCodeRequired: true
   }
 ];
 
