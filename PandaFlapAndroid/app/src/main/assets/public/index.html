@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Panda Flap</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-overlay" class="overlay">
+            <div id="start-menu" class="menu-card active">
+                <h1 class="game-title">Panda Flap</h1>
+                <p class="subtitle">Flap the cute panda through the bamboo forest!</p>
+                <div class="stats-row">
+                    <div class="stat-box">HighScore: <span id="best-score">0</span></div>
+                    <div class="stat-box">Coins: <span id="total-coins">0</span></div>
+                </div>
+                <button id="start-btn" class="glow-btn">Tap to Play</button>
+                <button id="shop-btn" class="secondary-btn">Skin Shop</button>
+            </div>
+
+            <div id="game-over-menu" class="menu-card">
+                <h2 class="game-over-title">Game Over</h2>
+                <div class="scores-card">
+                    <div class="score-line">Score: <span id="final-score">0</span></div>
+                    <div class="score-line">Best Score: <span id="over-best-score">0</span></div>
+                    <div class="score-line">Coins Collected: <span id="coins-collected">0</span></div>
+                </div>
+                <button id="restart-btn" class="glow-btn">Play Again</button>
+                <button id="over-shop-btn" class="secondary-btn">Skin Shop</button>
+            </div>
+
+            <div id="shop-menu" class="menu-card">
+                <h2 class="menu-title">Skin Shop</h2>
+                <div class="coin-count">Your Coins: <span id="shop-coins">0</span></div>
+                <div class="shop-grid" id="shop-items">
+                    <!-- Dynamic shop items -->
+                </div>
+                <button id="shop-back-btn" class="secondary-btn">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
