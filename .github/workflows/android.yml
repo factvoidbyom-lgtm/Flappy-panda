@@ -2,64 +2,29 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
+    branches: [ main ]
 
 jobs:
   build:
-    name: Build Debug APK
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          node-version: 22
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: |
-          npm install
-
-      - name: Build Web App
-        run: |
-          npm run build
-
-      - name: Sync Capacitor
-        run: |
-          npx cap sync
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '21'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.12'
+          java-version: '17'
+          distribution: 'temurin'
 
       - name: Build with Gradle
         run: |
-          chmod +x android/gradlew
-          cd android && ./gradlew assembleDebug bundleDebug --stacktrace
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-      - name: Upload Debug APK
-        uses: actions/upload-artifact@v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
         with:
-          name: flappy-panda-debug-apk
+          name: app-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-
-      - name: Upload Debug AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: flappy-panda-debug-aab
-          path: android/app/build/outputs/bundle/debug/app-debug.aab
-          if-no-files-found: error
